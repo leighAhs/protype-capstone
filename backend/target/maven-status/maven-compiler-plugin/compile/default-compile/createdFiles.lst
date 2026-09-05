@@ -1,0 +1,15 @@
+com\almeda\optical\AlmedaOpticalApplication.class
+com\almeda\optical\repository\UserRepository.class
+com\almeda\optical\controller\AuthController$AuthRequest.class
+com\almeda\optical\controller\UserController$UserPayload.class
+com\almeda\optical\repository\UserActivityLogRepository.class
+com\almeda\optical\model\UserActivityLog.class
+com\almeda\optical\controller\AuthController.class
+com\almeda\optical\controller\UserController.class
+com\almeda\optical\model\User.class
+com\almeda\optical\config\DataInitializer.class
+com\almeda\optical\controller\ApiController.class
+com\almeda\optical\model\Role.class
+com\almeda\optical\controller\ApiController$Credential.class
+com\almeda\optical\controller\ApiController$InventoryPayload.class
+com\almeda\optical\service\UserService.class

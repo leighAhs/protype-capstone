@@ -1,0 +1,835 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almeda Optical — Management System</title>
+<link rel="stylesheet" href="stylesheet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-eye">👁️</div>
+    <div class="sidebar-logo-name">Almeda Optical</div>
+    <div class="sidebar-logo-sub">Management System</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-icon">⊞</span> Dashboard
+    </div>
+
+    <div class="sidebar-section">Transactions</div>
+    <div class="nav-item" onclick="showPage('pos', this)">
+      <span class="nav-icon">🧾</span> New Transaction
+    </div>
+    <div class="nav-item" onclick="showPage('records', this)">
+      <span class="nav-icon">📋</span> Transaction Records
+    </div>
+    <div class="nav-item" onclick="showPage('customers', this)">
+      <span class="nav-icon">👤</span> Customers
+    </div>
+
+    <div class="sidebar-section">Operations</div>
+    <div class="nav-item" onclick="showPage('inventory', this)">
+      <span class="nav-icon">📦</span> Inventory
+      <span class="nav-badge alert">5</span>
+    </div>
+    <div class="nav-item" onclick="showPage('forecast', this)">
+      <span class="nav-icon">📈</span> Sales Forecast
+    </div>
+
+    <div class="sidebar-section">System</div>
+    <div class="nav-item" onclick="showPage('architecture', this)">
+      <span class="nav-icon">⚙️</span> System Design
+    </div>
+    <div class="nav-item" onclick="showPage('reports', this)">
+      <span class="nav-icon">📊</span> Reports
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar">AA</div>
+      <div>
+        <div class="user-name">Admin User</div>
+        <div class="user-role">Store Manager</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="hamburger-btn" onclick="toggleSidebar()">☰</div>
+    <span class="topbar-page-title" id="topbar-title">Dashboard</span>
+    <span class="topbar-sep">/</span>
+    <span class="topbar-breadcrumb" id="topbar-sub">Overview</span>
+    <div class="topbar-right">
+      <div class="topbar-date">📅 April 12, 2026</div>
+      <div class="notif-btn">🔔<span class="notif-dot"></span></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Good morning, Admin</div>
+        <div class="page-subtitle">Here's what's happening at Almeda Optical Shangri-La today</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card green">
+          <div class="kpi-label">Today's Revenue</div>
+          <div class="kpi-value">₱14,280</div>
+          <div class="kpi-sub"><span class="kpi-trend-up">↑ 12%</span> vs yesterday</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Transactions Today</div>
+          <div class="kpi-value">23</div>
+          <div class="kpi-sub">Since 8:00 AM opening</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-label">Low Stock Alerts</div>
+          <div class="kpi-value">5</div>
+          <div class="kpi-sub"><span class="kpi-trend-down">↑ 2</span> new since yesterday</div>
+        </div>
+      </div>
+
+      <div class="grid-2-1" style="margin-bottom: 16px;">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <div class="card-title" style="margin-bottom:0">Recent Transactions</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('records', document.querySelector('[onclick*=records]'))">View all →</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>#</th><th>Customer</th><th>Item</th><th>Amount</th><th>Payment</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="text-xs">TXN-0891</td><td class="name">J. Santos</td><td>Eyeglasses + Lens</td><td>₱3,200</td><td>GCash</td><td><span class="badge badge-success">Paid</span></td></tr>
+              <tr><td class="text-xs">TXN-0890</td><td class="name">M. Cruz</td><td>Sunglasses RB3025</td><td>₱5,800</td><td>Cash</td><td><span class="badge badge-success">Paid</span></td></tr>
+              <tr><td class="text-xs">TXN-0889</td><td class="name">A. Reyes</td><td>Contact Lenses 6mo</td><td>₱2,400</td><td>GCash</td><td><span class="badge badge-info">Processing</span></td></tr>
+              <tr><td class="text-xs">TXN-0888</td><td class="name">L. Tan</td><td>Lens Replacement</td><td>₱980</td><td>Cash</td><td><span class="badge badge-success">Paid</span></td></tr>
+              <tr><td class="text-xs">TXN-0887</td><td class="name">R. Bautista</td><td>Progressive Lenses</td><td>₱4,200</td><td>Credit Card</td><td><span class="badge badge-success">Paid</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Inventory Alerts</div>
+          <div class="alert-item">
+            <span class="status-dot dot-red"></span>
+            <div style="flex:1">
+              <div class="font-medium" style="font-size:13px">Ray-Ban RB3025 Gold</div>
+              <div class="text-xs">2 pcs remaining · Reorder point: 10</div>
+            </div>
+            <span class="badge badge-danger">Critical</span>
+          </div>
+          <div class="alert-item">
+            <span class="status-dot dot-orange"></span>
+            <div style="flex:1">
+              <div class="font-medium" style="font-size:13px">Oakley Holbrook</div>
+              <div class="text-xs">4 pcs remaining · Reorder point: 10</div>
+            </div>
+            <span class="badge badge-warning">Low</span>
+          </div>
+          <div class="alert-item">
+            <span class="status-dot dot-orange"></span>
+            <div style="flex:1">
+              <div class="font-medium" style="font-size:13px">AR Coating Kit</div>
+              <div class="text-xs">6 units remaining · Reorder point: 12</div>
+            </div>
+            <span class="badge badge-warning">Low</span>
+          </div>
+          <div class="alert-item">
+            <span class="status-dot dot-orange"></span>
+            <div style="flex:1">
+              <div class="font-medium" style="font-size:13px">Contact Lens Solution</div>
+              <div class="text-xs">8 units remaining · Reorder point: 15</div>
+            </div>
+            <span class="badge badge-warning">Low</span>
+          </div>
+          <div class="alert-item">
+            <span class="status-dot dot-orange"></span>
+            <div style="flex:1">
+              <div class="font-medium" style="font-size:13px">Photochromic Lens</div>
+              <div class="text-xs">7 units remaining · Reorder point: 10</div>
+            </div>
+            <span class="badge badge-warning">Low</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Monthly Revenue — 2026</div>
+          <div class="chart-bars" id="revenue-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Forecast — Next 3 Months</div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Model confidence: <strong style="color:var(--accent)">91.3%</strong></div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Month</th><th>Projected Revenue</th><th>vs Last Year</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <tr><td>May 2026</td><td style="font-weight:500">₱68,400</td><td><span class="kpi-trend-up">+8%</span></td><td><span class="badge badge-success">High</span></td></tr>
+              <tr><td>June 2026</td><td style="font-weight:500">₱72,100</td><td><span class="kpi-trend-up">+5%</span></td><td><span class="badge badge-success">High</span></td></tr>
+              <tr><td>July 2026</td><td style="font-weight:500">₱69,800</td><td><span class="kpi-trend-up">+3%</span></td><td><span class="badge badge-neutral">Medium</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== POS ==================== -->
+    <div class="page" id="page-pos">
+      <div class="page-header">
+        <div class="page-title">New Transaction</div>
+        <div class="page-subtitle">Paperless point-of-sale — TXN-0892</div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card mb-4">
+            <div class="card-title">Customer Information</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Customer Name</label>
+                <input class="form-input" type="text" value="Maria Santos" placeholder="Full name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Number</label>
+                <input class="form-input" type="tel" value="09171234567" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input class="form-input" type="email" placeholder="customer@email.com" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-title">Product / Service</div>
+            <div class="form-row">
+              <div class="form-group" style="flex:3">
+                <label class="form-label">Item</label>
+                <select class="form-select">
+                  <option>Eyeglasses Frame — Ray-Ban RB5154</option>
+                  <option>Progressive Lens Upgrade</option>
+                  <option>Sunglasses — Oakley Holbrook</option>
+                  <option>Contact Lenses (6-month supply)</option>
+                  <option>Anti-reflective Coating</option>
+                  <option>Lens Replacement</option>
+                  <option>Eye Examination</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:0.7;min-width:70px">
+                <label class="form-label">Qty</label>
+                <input class="form-input" type="number" value="1" min="1" />
+              </div>
+              <div class="form-group" style="flex:1.2">
+                <label class="form-label">Unit Price</label>
+                <input class="form-input" type="text" value="₱3,500" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Prescription — OD (Right)</label>
+                <input class="form-input" placeholder="-1.50 / -0.25 × 180" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prescription — OS (Left)</label>
+                <input class="form-input" placeholder="-1.25 / -0.50 × 175" />
+              </div>
+              <div class="form-group" style="flex:0.8;min-width:80px">
+                <label class="form-label">PD</label>
+                <input class="form-input" placeholder="63mm" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Lens Add-ons</label>
+                <select class="form-select">
+                  <option>Anti-reflective coating (+₱450)</option>
+                  <option>Photochromic lens (+₱800)</option>
+                  <option>Blue light filter (+₱350)</option>
+                  <option>None</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select class="form-select">
+                  <option>Cash</option>
+                  <option>GCash</option>
+                  <option>Credit Card</option>
+                  <option>Debit Card</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Notes / Special Instructions</label>
+                <textarea class="form-textarea" placeholder="e.g. tighten right temple, wrap-around preference..."></textarea>
+              </div>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+              <button class="btn btn-primary">Process Transaction</button>
+              <button class="btn btn-secondary">Save Draft</button>
+              <button class="btn btn-secondary">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb-4">
+            <div class="card-title">Receipt Preview</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <strong style="font-size:14px;color:var(--text);font-family:'DM Serif Display',serif">Almeda Optical Shangri-La</strong><br>
+              Shangri-La Plaza, Mandaluyong City<br>
+              TXN-0892 · April 12, 2026 · 10:34 AM
+            </div>
+
+            <div class="receipt-line"><span>Ray-Ban RB5154 Frame × 1</span><span>₱3,500.00</span></div>
+            <div class="receipt-line"><span>Progressive Lens Upgrade × 1</span><span>₱1,800.00</span></div>
+            <div class="receipt-line"><span>Anti-reflective Coating × 1</span><span>₱450.00</span></div>
+            <div class="receipt-line"><span style="color:var(--text3)">Subtotal</span><span>₱5,750.00</span></div>
+            <div class="receipt-total-line"><span>Total Due</span><span>₱5,750.00</span></div>
+
+            <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:12px;color:var(--text3)">
+              Prescribed by: Dr. Anna Villanueva · PRC #45281<br>
+              Pickup/Ready by: April 17, 2026
+            </div>
+
+            <div class="flex gap-2 mt-4">
+              <button class="btn btn-secondary btn-sm full-width">🖨️ Print</button>
+              <button class="btn btn-secondary btn-sm full-width">📱 SMS Receipt</button>
+              <button class="btn btn-secondary btn-sm full-width">📧 Email</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TRANSACTION RECORDS ==================== -->
+    <div class="page" id="page-records">
+      <div class="page-header">
+        <div class="page-title">Transaction Records</div>
+        <div class="page-subtitle">All paperless sales records — digitized & searchable</div>
+      </div>
+
+      <div class="top-actions">
+        <div class="search-bar">🔍 &nbsp;Search by customer, TXN ID, item…</div>
+        <select class="form-select" style="width:auto">
+          <option>All Payment Types</option>
+          <option>Cash</option><option>GCash</option><option>Credit Card</option>
+        </select>
+        <select class="form-select" style="width:auto">
+          <option>All Status</option>
+          <option>Paid</option><option>Processing</option><option>Pending</option>
+        </select>
+        <button class="btn btn-secondary btn-sm">Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="showPage('pos', document.querySelector('[onclick*=pos]'))">+ New Transaction</button>
+      </div>
+
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr><th>TXN ID</th><th>Date</th><th>Customer</th><th>Item(s)</th><th>Amount</th><th>Payment</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="text-xs">TXN-0891</td><td class="text-xs">Apr 12</td><td class="name">J. Santos</td><td>Eyeglasses + Lens</td><td>₱3,200</td><td>GCash</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0890</td><td class="text-xs">Apr 12</td><td class="name">M. Cruz</td><td>Ray-Ban RB3025</td><td>₱5,800</td><td>Cash</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0889</td><td class="text-xs">Apr 12</td><td class="name">A. Reyes</td><td>Contact Lenses 6mo</td><td>₱2,400</td><td>GCash</td><td><span class="badge badge-info">Processing</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0888</td><td class="text-xs">Apr 11</td><td class="name">L. Tan</td><td>Lens Replacement</td><td>₱980</td><td>Cash</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0887</td><td class="text-xs">Apr 11</td><td class="name">R. Bautista</td><td>Progressive Lenses</td><td>₱4,200</td><td>Credit Card</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0886</td><td class="text-xs">Apr 11</td><td class="name">C. Flores</td><td>Oakley Holbrook</td><td>₱4,500</td><td>GCash</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td class="text-xs">TXN-0885</td><td class="text-xs">Apr 10</td><td class="name">B. Mendoza</td><td>Eye Exam + Frame</td><td>₱6,100</td><td>Cash</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text3)">
+          <span>Showing 7 of 891 records</span>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm">← Previous</button>
+            <button class="btn btn-secondary btn-sm">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CUSTOMERS ==================== -->
+    <div class="page" id="page-customers">
+      <div class="page-header">
+        <div class="page-title">Customer Directory</div>
+        <div class="page-subtitle">All registered customers and their profiles</div>
+      </div>
+
+      <div class="top-actions">
+        <div class="search-bar">🔍 &nbsp;Search by name or card no…</div>
+        <button class="btn btn-primary btn-sm">+ Register Customer</button>
+      </div>
+
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>Customer</th><th>Card No.</th><th>Tier</th><th>Points</th><th>Total Spend</th><th>Last Visit</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="flex items-center gap-2"><div class="mini-avatar" style="background:var(--accent-light);color:var(--accent)">MS</div><span class="name">Maria Santos</span></div></td>
+              <td class="text-xs">AOL-0028</td>
+              <td><span class="badge badge-gold">Gold</span></td>
+              <td>258 pts</td>
+              <td>₱24,600</td>
+              <td>Apr 12</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td><button class="btn btn-secondary btn-sm">Profile</button></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><div class="mini-avatar" style="background:var(--blue-light);color:var(--blue)">JR</div><span class="name">Jose Reyes</span></div></td>
+              <td class="text-xs">AOL-0015</td>
+              <td><span class="badge badge-neutral">Silver</span></td>
+              <td>142 pts</td>
+              <td>₱12,400</td>
+              <td>Apr 8</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td><button class="btn btn-secondary btn-sm">Profile</button></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><div class="mini-avatar" style="background:var(--orange-light);color:var(--orange)">AT</div><span class="name">Ana Torres</span></div></td>
+              <td class="text-xs">AOL-0041</td>
+              <td><span class="badge badge-success">Bronze</span></td>
+              <td>87 pts</td>
+              <td>₱7,200</td>
+              <td>Mar 29</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td><button class="btn btn-secondary btn-sm">Profile</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== INVENTORY ==================== -->
+    <div class="page" id="page-inventory">
+      <div class="page-header">
+        <div class="page-title">Inventory Management</div>
+        <div class="page-subtitle">Real-time stock monitoring with automated alerts</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card green">
+          <div class="kpi-label">Total SKUs</div>
+          <div class="kpi-value">48</div>
+          <div class="kpi-sub">Across all categories</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-label">Critical Stock</div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-sub"><span class="kpi-trend-down">Immediate reorder</span></div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Low Stock</div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-sub">Below reorder point</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Inventory Value</div>
+          <div class="kpi-value">₱284K</div>
+          <div class="kpi-sub">Estimated total</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="search-bar">🔍 &nbsp;Search products…</div>
+        <select class="form-select" style="width:auto">
+          <option>All Categories</option>
+          <option>Frames</option><option>Lenses</option><option>Sunglasses</option><option>Accessories</option><option>Contact Lenses</option>
+        </select>
+        <select class="form-select" style="width:auto">
+          <option>All Status</option>
+          <option>Critical</option><option>Low</option><option>OK</option>
+        </select>
+        <button class="btn btn-primary btn-sm">+ Add Product</button>
+      </div>
+
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr><th>Product</th><th>SKU</th><th>Category</th><th>In Stock</th><th>Reorder Pt.</th><th>Stock Level</th><th>Last Updated</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">Ray-Ban RB3025 Gold/G15</td><td class="text-xs">SG-001</td><td>Sunglasses</td><td><strong>2</strong></td><td>10</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:8%;background:var(--red)"></div></div><span class="stock-val">8%</span></div></td>
+              <td class="text-xs">Apr 12</td><td><span class="badge badge-danger">Critical</span></td>
+              <td><button class="btn btn-danger btn-sm">Reorder</button></td>
+            </tr>
+            <tr>
+              <td class="name">Oakley Holbrook Matte</td><td class="text-xs">SG-004</td><td>Sunglasses</td><td><strong>4</strong></td><td>10</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:20%;background:var(--orange)"></div></div><span class="stock-val">20%</span></div></td>
+              <td class="text-xs">Apr 11</td><td><span class="badge badge-warning">Low</span></td>
+              <td><button class="btn btn-secondary btn-sm">Reorder</button></td>
+            </tr>
+            <tr>
+              <td class="name">Anti-Reflective Coating Kit</td><td class="text-xs">AC-012</td><td>Accessories</td><td><strong>6</strong></td><td>12</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:25%;background:var(--orange)"></div></div><span class="stock-val">25%</span></div></td>
+              <td class="text-xs">Apr 10</td><td><span class="badge badge-warning">Low</span></td>
+              <td><button class="btn btn-secondary btn-sm">Reorder</button></td>
+            </tr>
+            <tr>
+              <td class="name">Progressive Lens (1.60)</td><td class="text-xs">LN-008</td><td>Lenses</td><td><strong>18</strong></td><td>15</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:72%;background:var(--accent-mid)"></div></div><span class="stock-val">72%</span></div></td>
+              <td class="text-xs">Apr 12</td><td><span class="badge badge-success">OK</span></td>
+              <td><button class="btn btn-secondary btn-sm">Edit</button></td>
+            </tr>
+            <tr>
+              <td class="name">Single Vision Lens (1.50)</td><td class="text-xs">LN-002</td><td>Lenses</td><td><strong>32</strong></td><td>20</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:80%;background:var(--accent-mid)"></div></div><span class="stock-val">80%</span></div></td>
+              <td class="text-xs">Apr 11</td><td><span class="badge badge-success">OK</span></td>
+              <td><button class="btn btn-secondary btn-sm">Edit</button></td>
+            </tr>
+            <tr>
+              <td class="name">Ray-Ban RB5154 Tortoise</td><td class="text-xs">FR-018</td><td>Frames</td><td><strong>11</strong></td><td>8</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:68%;background:var(--accent-mid)"></div></div><span class="stock-val">68%</span></div></td>
+              <td class="text-xs">Apr 9</td><td><span class="badge badge-success">OK</span></td>
+              <td><button class="btn btn-secondary btn-sm">Edit</button></td>
+            </tr>
+            <tr>
+              <td class="name">Acuvue Oasys Contact (6pk)</td><td class="text-xs">CL-003</td><td>Contact Lenses</td><td><strong>8</strong></td><td>15</td>
+              <td><div class="stock-wrap"><div class="stock-bar-bg"><div class="stock-bar-fill" style="width:27%;background:var(--orange)"></div></div><span class="stock-val">27%</span></div></td>
+              <td class="text-xs">Apr 10</td><td><span class="badge badge-warning">Low</span></td>
+              <td><button class="btn btn-secondary btn-sm">Reorder</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== FORECAST ==================== -->
+    <div class="page" id="page-forecast">
+      <div class="page-header">
+        <div class="page-title">Sales Forecast</div>
+        <div class="page-subtitle">Predictive analytics powered by historical sales data</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card green">
+          <div class="kpi-label">May 2026 Projection</div>
+          <div class="kpi-value">₱68,400</div>
+          <div class="kpi-sub"><span class="kpi-trend-up">↑ 8%</span> vs May 2025</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Jun 2026 Projection</div>
+          <div class="kpi-value">₱72,100</div>
+          <div class="kpi-sub"><span class="kpi-trend-up">↑ 5%</span> vs Jun 2025</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Model Accuracy (MAPE)</div>
+          <div class="kpi-value">91.3%</div>
+          <div class="kpi-sub">Rolling 3-month average</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-label">Restock Recommended</div>
+          <div class="kpi-value">7 items</div>
+          <div class="kpi-sub">Before May 1, 2026</div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="card-title">Revenue Forecast — Jan to Oct 2026</div>
+          <div class="chart-bars" id="forecast-chart" style="height:130px;padding-bottom:30px;"></div>
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--text3);margin-top:4px">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--accent-mid);border-radius:2px;display:inline-block"></span>Actual Sales</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--blue);opacity:0.5;border-radius:2px;display:inline-block"></span>Forecast</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Demand — May 2026</div>
+          <table class="data-table">
+            <thead><tr><th>Product</th><th>Projected Units</th><th>Suggested Restock</th></tr></thead>
+            <tbody>
+              <tr><td>Progressive Lens</td><td style="font-weight:500">28 units</td><td><span class="badge badge-warning">+20 units</span></td></tr>
+              <tr><td>Single Vision Lens</td><td style="font-weight:500">35 units</td><td><span class="badge badge-success">Sufficient</span></td></tr>
+              <tr><td>Ray-Ban RB3025</td><td style="font-weight:500">12 units</td><td><span class="badge badge-danger">+10 units</span></td></tr>
+              <tr><td>Contact Lenses</td><td style="font-weight:500">22 units</td><td><span class="badge badge-warning">+15 units</span></td></tr>
+              <tr><td>Oakley Holbrook</td><td style="font-weight:500">9 units</td><td><span class="badge badge-warning">+5 units</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Monthly Forecast Table — Full Year 2026</div>
+        <table class="data-table">
+          <thead><tr><th>Month</th><th>Type</th><th>Projected Revenue</th><th>Units Sold (est.)</th><th>YoY Change</th><th>Inventory Action</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td>January</td><td><span class="badge badge-neutral">Actual</span></td><td>₱58,200</td><td>147 units</td><td><span style="color:var(--accent-mid)">+6%</span></td><td>—</td><td>—</td></tr>
+            <tr><td>February</td><td><span class="badge badge-neutral">Actual</span></td><td>₱54,800</td><td>138 units</td><td><span style="color:var(--accent-mid)">+4%</span></td><td>—</td><td>—</td></tr>
+            <tr><td>March</td><td><span class="badge badge-neutral">Actual</span></td><td>₱61,400</td><td>162 units</td><td><span style="color:var(--accent-mid)">+9%</span></td><td>—</td><td>—</td></tr>
+            <tr><td>April</td><td><span class="badge badge-neutral">Actual</span></td><td>₱63,100</td><td>168 units</td><td><span style="color:var(--accent-mid)">+7%</span></td><td>—</td><td>—</td></tr>
+            <tr style="background:var(--accent-light)"><td><strong>May</strong></td><td><span class="badge badge-info">Forecast</span></td><td><strong>₱68,400</strong></td><td>182 units</td><td><span style="color:var(--accent-mid)">+8%</span></td><td><span class="badge badge-warning">Restock 5 items</span></td><td><span class="badge badge-success">91%</span></td></tr>
+            <tr style="background:var(--blue-light)"><td>June</td><td><span class="badge badge-info">Forecast</span></td><td>₱72,100</td><td>191 units</td><td><span style="color:var(--accent-mid)">+5%</span></td><td><span class="badge badge-warning">Restock 3 items</span></td><td><span class="badge badge-success">89%</span></td></tr>
+            <tr style="background:var(--blue-light)"><td>July</td><td><span class="badge badge-info">Forecast</span></td><td>₱69,800</td><td>185 units</td><td><span style="color:var(--accent-mid)">+3%</span></td><td>—</td><td><span class="badge badge-neutral">82%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== ARCHITECTURE ==================== -->
+    <div class="page" id="page-architecture">
+      <div class="page-header">
+        <div class="page-title">System Design</div>
+        <div class="page-subtitle">Design of Software, Systems, Product and/or Processes — Chapter 3</div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-title">System Architecture — Core Modules</div>
+        <div class="grid-3" style="gap:12px;margin-bottom:16px">
+          <div class="arch-module" style="border-color:var(--blue);border-width:2px">
+            <div class="arch-module-badge"><span class="badge badge-info">Module 1</span></div>
+            <span class="arch-module-icon">🧾</span>
+            <div class="arch-module-title">Paperless Transactions</div>
+            <div class="arch-module-desc">Digital POS, electronic receipts, prescription records, customer data capture</div>
+          </div>
+          <div class="arch-module" style="border-color:var(--orange);border-width:2px">
+            <div class="arch-module-badge"><span class="badge badge-warning">Module 2</span></div>
+            <span class="arch-module-icon">📦</span>
+            <div class="arch-module-title">Inventory Optimization</div>
+            <div class="arch-module-desc">Real-time stock tracking, automated low-stock alerts, reorder threshold management</div>
+          </div>
+          <div class="arch-module" style="border-color:var(--accent-mid);border-width:2px">
+            <div class="arch-module-badge"><span class="badge badge-success">Module 3</span></div>
+            <span class="arch-module-icon">📈</span>
+            <div class="arch-module-title">Sales Forecasting</div>
+            <div class="arch-module-desc">Predictive analytics on historical data, 6-month demand projections, restock recommendations</div>
+          </div>
+          <div class="arch-module">
+            <span class="arch-module-icon">🔐</span>
+            <div class="arch-module-title">User Access Control</div>
+            <div class="arch-module-desc">Role-based permissions: Admin, Manager, Cashier, Inventory Staff</div>
+          </div>
+          <div class="arch-module">
+            <span class="arch-module-icon">🗄️</span>
+            <div class="arch-module-title">Centralized Database</div>
+            <div class="arch-module-desc">Secure PostgreSQL storage for all records, transactions, inventory and analytics data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="card-title">Transaction Process Flow</div>
+          <div class="flow-steps" style="gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0">
+            <div class="flow-step done"><div class="flow-step-circle">1</div><div class="flow-step-label">Customer Lookup</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">2</div><div class="flow-step-label">Product Select</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">3</div><div class="flow-step-label">Payment</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">4</div><div class="flow-step-label">Receipt + Stock Update</div></div>
+          </div>
+          <hr class="divider">
+          <div class="card-title">Forecasting Pipeline</div>
+          <div class="flow-steps" style="gap:0;flex-wrap:nowrap;overflow-x:auto;padding:8px 0">
+            <div class="flow-step done"><div class="flow-step-circle">1</div><div class="flow-step-label">Sales Data Input</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">2</div><div class="flow-step-label">Data Cleaning</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">3</div><div class="flow-step-label">Prophet Model</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">4</div><div class="flow-step-label">Projection Output</div></div>
+            <div class="flow-arrow-line"></div>
+            <div class="flow-step done"><div class="flow-step-circle">5</div><div class="flow-step-label">Restock Alert</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Technology Stack</div>
+          <div class="module-row">
+            <div class="module-row-icon" style="background:var(--blue-light)">🖥️</div>
+            <div class="module-row-info"><div class="module-row-name">Frontend — React.js / Electron</div><div class="module-row-desc">Desktop & web-based interface; responsive UI</div></div>
+            <span class="badge badge-info">UI Layer</span>
+          </div>
+          <div class="module-row">
+            <div class="module-row-icon" style="background:var(--accent-light)">⚙️</div>
+            <div class="module-row-info"><div class="module-row-name">Backend — Node.js / Express</div><div class="module-row-desc">REST API, authentication, business logic</div></div>
+            <span class="badge badge-success">API Layer</span>
+          </div>
+          <div class="module-row">
+            <div class="module-row-icon" style="background:var(--orange-light)">🗄️</div>
+            <div class="module-row-info"><div class="module-row-name">Database — PostgreSQL</div><div class="module-row-desc">Relational data storage; all transactions and records</div></div>
+            <span class="badge badge-warning">Data Layer</span>
+          </div>
+          <div class="module-row">
+            <div class="module-row-icon" style="background:var(--gold-light)">📊</div>
+            <div class="module-row-info"><div class="module-row-name">Analytics — Python / Prophet</div><div class="module-row-desc">Time-series forecasting; scikit-learn preprocessing</div></div>
+            <span class="badge badge-gold">AI Layer</span>
+          </div>
+          <div class="module-row">
+            <div class="module-row-icon" style="background:var(--surface2)">🌐</div>
+            <div class="module-row-info"><div class="module-row-name">Platform — Desktop / Web</div><div class="module-row-desc">Single-branch deployment; no mobile app</div></div>
+            <span class="badge badge-neutral">Deployment</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">User Roles & Permissions</div>
+          <table class="data-table">
+            <thead><tr><th>Role</th><th>Access Level</th></tr></thead>
+            <tbody>
+              <tr><td class="name">Admin</td><td><span class="badge badge-danger">Full System</span></td></tr>
+              <tr><td class="name">Manager</td><td><span class="badge badge-info">Reports + Forecast</span></td></tr>
+              <tr><td class="name">Cashier</td><td><span class="badge badge-success">POS</span></td></tr>
+              <tr><td class="name">Inventory Staff</td><td><span class="badge badge-warning">Stock Module</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Forecast Model Specs</div>
+          <table class="data-table">
+            <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--text3)">Algorithm</td><td>Facebook Prophet</td></tr>
+              <tr><td style="color:var(--text3)">Training Data</td><td>Historical sales (2+ yrs)</td></tr>
+              <tr><td style="color:var(--text3)">Horizon</td><td>6 months</td></tr>
+              <tr><td style="color:var(--text3)">Target MAPE</td><td>&lt; 10%</td></tr>
+              <tr><td style="color:var(--text3)">Update Frequency</td><td>Daily</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">System Scope</div>
+          <div style="font-size:12px;line-height:1.8">
+            <div style="margin-bottom:6px"><span class="badge badge-success">✓</span> &nbsp;Paperless POS & records</div>
+            <div style="margin-bottom:6px"><span class="badge badge-success">✓</span> &nbsp;Inventory optimization</div>
+            <div style="margin-bottom:6px"><span class="badge badge-success">✓</span> &nbsp;Predictive sales forecasting</div>
+            <div style="margin-bottom:6px"><span class="badge badge-danger">✗</span> &nbsp;External marketplaces</div>
+            <div style="margin-bottom:6px"><span class="badge badge-danger">✗</span> &nbsp;Mobile application</div>
+            <div><span class="badge badge-danger">✗</span> &nbsp;Multi-branch / payroll</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== REPORTS ==================== -->
+    <div class="page" id="page-reports">
+      <div class="page-header">
+        <div class="page-title">Reports</div>
+        <div class="page-subtitle">Business performance summaries and analytics exports</div>
+      </div>
+
+      <div class="grid-2 mb-4">
+        <div class="card">
+          <div class="card-title">Generate Report</div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Report Type</label><select class="form-select"><option>Daily Sales Summary</option><option>Weekly Inventory Report</option><option>Monthly Revenue Analysis</option><option>Demand Forecast Report</option></select></div></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Date From</label><input class="form-input" type="date" value="2026-04-01" /></div>
+            <div class="form-group"><label class="form-label">Date To</label><input class="form-input" type="date" value="2026-04-12" /></div>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-primary">Generate Report</button>
+            <button class="btn btn-secondary">Export to CSV</button>
+            <button class="btn btn-secondary">Print</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quick Stats — April 2026</div>
+          <div class="grid-2" style="gap:10px">
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center"><div class="inline-stat-val">₱189K</div><div class="inline-stat-label">Month Revenue</div></div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center"><div class="inline-stat-val">302</div><div class="inline-stat-label">Transactions</div></div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center"><div class="inline-stat-val">₱626</div><div class="inline-stat-label">Avg. Ticket Size</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+const pageLabels = {
+  dashboard: ['Dashboard', 'Overview'],
+  pos: ['New Transaction', 'Point of Sale'],
+  records: ['Transaction Records', 'All Transactions'],
+  customers: ['Customer Directory', 'CRM'],
+  inventory: ['Inventory', 'Stock Management'],
+  forecast: ['Sales Forecast', 'Predictive Analytics'],
+  architecture: ['System Design', 'Chapter 3 — Design'],
+  reports: ['Reports', 'Analytics']
+};
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  sidebar.classList.toggle('hidden');
+  main.classList.toggle('sidebar-hidden');
+}
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  const labels = pageLabels[id] || [id, ''];
+  document.getElementById('topbar-title').textContent = labels[0];
+  document.getElementById('topbar-sub').textContent = labels[1];
+}
+
+// Revenue chart
+function buildChart(id, actual, forecast, labels, maxH) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const max = Math.max(...actual, ...forecast);
+  const h = maxH || 80;
+  const barsHtml = labels.map((lbl, i) => {
+    const aVal = actual[i] || 0;
+    const fVal = forecast[i] || 0;
+    const aH = Math.round((aVal / max) * h);
+    const fH = Math.round((fVal / max) * h);
+    let bar = `<div class="chart-bar-group">`;
+    if (aVal) bar += `<div class="chart-bar" style="height:${aH}px;background:var(--accent-mid)"></div>`;
+    if (fVal) bar += `<div class="chart-bar" style="height:${fH}px;background:var(--blue);opacity:0.5"></div>`;
+    bar += '</div>';
+    return bar;
+  }).join('');
+  const labelsHtml = `<div class="chart-label">${labels.map(l => `<span>${l}</span>`).join('')}</div>`;
+  el.innerHTML = barsHtml + labelsHtml;
+}
+
+buildChart('revenue-chart',
+  [48, 52, 58, 63, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 68, 72, 70, 0, 0, 0],
+  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'],
+  80
+);
+
+buildChart('forecast-chart',
+  [48, 52, 58, 63, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 68, 72, 70, 71, 74, 69],
+  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'],
+  100
+);
+</script>
+</body>
+</html>
