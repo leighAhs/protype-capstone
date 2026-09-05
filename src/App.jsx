@@ -14,28 +14,28 @@ const pageLabels = {
 };
 
 const navItems = [
-  { section: 'Main', items: [{ id: 'dashboard', icon: '⊞', label: 'Dashboard' }] },
+  { section: 'Main', items: [{ id: 'dashboard', label: 'Dashboard' }] },
   {
     section: 'Transactions',
     items: [
-      { id: 'pos', icon: '🧾', label: 'New Transaction' },
-      { id: 'records', icon: '📋', label: 'Transaction Records' },
-      { id: 'customers', icon: '👤', label: 'Customers' }
+      { id: 'pos', label: 'New Transaction' },
+      { id: 'records', label: 'Transaction Records' },
+      { id: 'customers', label: 'Customers' }
     ]
   },
   {
     section: 'Operations',
     items: [
-      { id: 'inventory', icon: '📦', label: 'Inventory' },
-      { id: 'forecast', icon: '📈', label: 'Sales Forecast' }
+      { id: 'inventory', label: 'Inventory' },
+      { id: 'forecast', label: 'Sales Forecast' }
     ]
   },
   {
     section: 'System',
     items: [
-      { id: 'architecture', icon: '⚙️', label: 'System Design', hideForStaff: true },
-      { id: 'users', icon: '👥', label: 'User Management', requiredRole: 'ADMIN' },
-      { id: 'reports', icon: '📊', label: 'Reports' }
+      { id: 'architecture', label: 'System Design', hideForStaff: true },
+      { id: 'users', label: 'User Management', requiredRole: 'ADMIN' },
+      { id: 'reports', label: 'Reports' }
     ]
   }
 ];
@@ -47,11 +47,11 @@ const formatUserRole = (role) => {
 };
 
 const archModules = [
-  { icon: '🧾', title: 'Paperless Transactions', desc: 'Digital POS, electronic receipts, prescription records, customer data capture', badge: 'Module 1', badgeClass: 'badge-info', style: { borderColor: 'var(--blue)', borderWidth: '2px' } },
-  { icon: '📦', title: 'Inventory Optimization', desc: 'Real-time stock tracking, automated low-stock alerts, reorder threshold management', badge: 'Module 2', badgeClass: 'badge-warning', style: { borderColor: 'var(--orange)', borderWidth: '2px' } },
-  { icon: '📈', title: 'Sales Forecasting', desc: 'Predictive analytics on historical data, 6-month demand projections, restock recommendations', badge: 'Module 3', badgeClass: 'badge-success', style: { borderColor: 'var(--accent-mid)', borderWidth: '2px' } },
-  { icon: '🔐', title: 'User Access Control', desc: 'Role-based permissions: Admin, Manager, Cashier, Inventory Staff' },
-  { icon: '🗄️', title: 'Centralized Database', desc: 'Secure PostgreSQL storage for all records, transactions, inventory and analytics data' }
+  { title: 'Paperless Transactions', desc: 'Digital POS, electronic receipts, prescription records, customer data capture', badge: 'Module 1', badgeClass: 'badge-info', style: { borderColor: 'var(--blue)', borderWidth: '2px' } },
+  { title: 'Inventory Optimization', desc: 'Real-time stock tracking, automated low-stock alerts, reorder threshold management', badge: 'Module 2', badgeClass: 'badge-warning', style: { borderColor: 'var(--orange)', borderWidth: '2px' } },
+  { title: 'Sales Forecasting', desc: 'Predictive analytics on historical data, 6-month demand projections, restock recommendations', badge: 'Module 3', badgeClass: 'badge-success', style: { borderColor: 'var(--accent-mid)', borderWidth: '2px' } },
+  { title: 'User Access Control', desc: 'Role-based permissions: Admin, Manager, Cashier, Inventory Staff' },
+  { title: 'Centralized Database', desc: 'Secure PostgreSQL storage for all records, transactions, inventory and analytics data' }
 ];
 
 const roles = [
@@ -604,7 +604,6 @@ function App() {
     <>
       <aside className={sidebarHidden ? 'sidebar hidden' : 'sidebar'}>
         <div className="sidebar-logo">
-          <div className="sidebar-logo-eye">👁️</div>
           <div className="sidebar-logo-name">Almeda Optical</div>
           <div className="sidebar-logo-sub">Management System</div>
         </div>
@@ -628,7 +627,6 @@ function App() {
                       className={`nav-item${currentPage === item.id ? ' active' : ''}`}
                       onClick={() => setCurrentPage(item.id)}
                     >
-                      <span className="nav-icon">{item.icon}</span>
                       {item.label}
                       {badgeValue ? <span className="nav-badge alert">{badgeValue}</span> : null}
                     </div>
@@ -655,14 +653,14 @@ function App() {
 
       <div className={sidebarHidden ? 'main sidebar-hidden' : 'main'}>
         <div className="topbar">
-          <div className="hamburger-btn" onClick={() => setSidebarHidden((value) => !value)}>☰</div>
+          <button className="hamburger-btn" type="button" onClick={() => setSidebarHidden((value) => !value)}>Menu</button>
           <span className="topbar-page-title">{labels[0]}</span>
           <span className="topbar-sep">/</span>
           <span className="topbar-breadcrumb">{labels[1]}</span>
           <div className="topbar-right">
-            <div className="topbar-date">📅 April 12, 2026</div>
+            <div className="topbar-date">April 12, 2026</div>
             <button className="btn btn-secondary btn-sm" type="button" onClick={handleLogout} style={{ marginRight: 10 }}>Log out</button>
-            <div className="notif-btn">🔔<span className="notif-dot" /></div>
+            <button className="notif-btn" type="button">Alerts<span className="notif-dot" /></button>
           </div>
         </div>
 
@@ -677,7 +675,7 @@ function App() {
               <div className="kpi-card green">
                 <div className="kpi-label">Today's Revenue</div>
                 <div className="kpi-value">₱14,280</div>
-                <div className="kpi-sub"><span className="kpi-trend-up">↑ 12%</span> vs yesterday</div>
+                <div className="kpi-sub"><span className="kpi-trend-up">Up 12%</span> vs yesterday</div>
               </div>
               <div className="kpi-card blue">
                 <div className="kpi-label">Transactions Today</div>
@@ -687,7 +685,7 @@ function App() {
               <div className="kpi-card red">
                 <div className="kpi-label">Low Stock Alerts</div>
                 <div className="kpi-value">{lowStockAlertCount}</div>
-                <div className="kpi-sub"><span className="kpi-trend-down">↑ 2</span> new since yesterday</div>
+                <div className="kpi-sub"><span className="kpi-trend-down">Up 2</span> new since yesterday</div>
               </div>
             </div>
 
@@ -695,7 +693,7 @@ function App() {
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <div className="card-title" style={{ marginBottom: 0 }}>Recent Transactions</div>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage('records')}>View all →</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setCurrentPage('records')}>View all</button>
                 </div>
                 <table className="data-table">
                   <thead>
@@ -892,9 +890,9 @@ function App() {
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    <button className="btn btn-secondary btn-sm full-width">🖨️ Print</button>
-                    <button className="btn btn-secondary btn-sm full-width">📱 SMS Receipt</button>
-                    <button className="btn btn-secondary btn-sm full-width">📧 Email</button>
+                    <button className="btn btn-secondary btn-sm full-width">Print</button>
+                    <button className="btn btn-secondary btn-sm full-width">SMS Receipt</button>
+                    <button className="btn btn-secondary btn-sm full-width">Email</button>
                   </div>
                 </div>
               </div>
@@ -907,7 +905,7 @@ function App() {
               <div className="page-subtitle">All paperless sales records — digitized & searchable</div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">🔍 &nbsp;Search by customer, TXN ID, item…</div>
+              <div className="search-bar">Search by customer, TXN ID, item...</div>
               <select className="form-select" style={{ width: 'auto' }}>
                 <option>All Payment Types</option>
                 <option>Cash</option>
@@ -946,8 +944,8 @@ function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
                 <span>Showing {recordRows.length} of {recordRows.length} records</span>
                 <div className="flex gap-2">
-                  <button className="btn btn-secondary btn-sm">← Previous</button>
-                  <button className="btn btn-secondary btn-sm">Next →</button>
+                  <button className="btn btn-secondary btn-sm">Previous</button>
+                  <button className="btn btn-secondary btn-sm">Next</button>
                 </div>
               </div>
             </div>
@@ -959,7 +957,7 @@ function App() {
               <div className="page-subtitle">All registered customers and their profiles</div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">🔍 &nbsp;Search by name or card no…</div>
+              <div className="search-bar">Search by name or card no...</div>
               <button className="btn btn-primary btn-sm">+ Register Customer</button>
             </div>
             <div className="card">
@@ -998,7 +996,7 @@ function App() {
               <div className="kpi-card blue"><div className="kpi-label">Inventory Value</div><div className="kpi-value">₱284K</div><div className="kpi-sub">Estimated total</div></div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">🔍 &nbsp;Search products…</div>
+              <div className="search-bar">Search products...</div>
               <select className="form-select" style={{ width: 'auto' }}>
                 <option>All Categories</option>
                 <option>Frames</option>
@@ -1111,7 +1109,7 @@ function App() {
               <div className="page-subtitle">Manage system users and roles</div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">👥 User management for Admins only</div>
+              <div className="search-bar">User management for Admins only</div>
               <button className="btn btn-primary btn-sm" onClick={() => { setShowUserForm((open) => !open); setEditingUser(null); setUserForm({ username: '', password: '', displayName: '', role: 'STAFF' }); }}>
                 {showUserForm ? 'Cancel' : '+ Add User'}
               </button>
@@ -1181,8 +1179,8 @@ function App() {
               <div className="page-subtitle">Predictive analytics powered by historical sales data</div>
             </div>
             <div className="kpi-grid">
-              <div className="kpi-card green"><div className="kpi-label">May 2026 Projection</div><div className="kpi-value">₱68,400</div><div className="kpi-sub"><span className="kpi-trend-up">↑ 8%</span> vs May 2025</div></div>
-              <div className="kpi-card blue"><div className="kpi-label">Jun 2026 Projection</div><div className="kpi-value">₱72,100</div><div className="kpi-sub"><span className="kpi-trend-up">↑ 5%</span> vs Jun 2025</div></div>
+              <div className="kpi-card green"><div className="kpi-label">May 2026 Projection</div><div className="kpi-value">₱68,400</div><div className="kpi-sub"><span className="kpi-trend-up">Up 8%</span> vs May 2025</div></div>
+              <div className="kpi-card blue"><div className="kpi-label">Jun 2026 Projection</div><div className="kpi-value">₱72,100</div><div className="kpi-sub"><span className="kpi-trend-up">Up 5%</span> vs Jun 2025</div></div>
               <div className="kpi-card gold"><div className="kpi-label">Model Accuracy (MAPE)</div><div className="kpi-value">91.3%</div><div className="kpi-sub">Rolling 3-month average</div></div>
               <div className="kpi-card red"><div className="kpi-label">Restock Recommended</div><div className="kpi-value">7 items</div><div className="kpi-sub">Before May 1, 2026</div></div>
             </div>
@@ -1249,7 +1247,6 @@ function App() {
                 {archModules.map((module) => (
                   <div className="arch-module" key={module.title} style={module.style}>
                     {module.badge ? <div className="arch-module-badge"><span className={`badge ${module.badgeClass}`}>{module.badge}</span></div> : null}
-                    <span className="arch-module-icon">{module.icon}</span>
                     <div className="arch-module-title">{module.title}</div>
                     <div className="arch-module-desc">{module.desc}</div>
                   </div>
@@ -1287,14 +1284,13 @@ function App() {
               <div className="card">
                 <div className="card-title">Technology Stack</div>
                 {[
-                  { icon: '🖥️', bg: 'var(--blue-light)', name: 'Frontend — React.js / Electron', desc: 'Desktop & web-based interface; responsive UI', badge: 'UI Layer', badgeClass: 'badge-info' },
-                  { icon: '⚙️', bg: 'var(--accent-light)', name: 'Backend — Spring Boot', desc: 'REST API, authentication, business logic', badge: 'API Layer', badgeClass: 'badge-success' },
-                  { icon: '🗄️', bg: 'var(--orange-light)', name: 'Database — PostgreSQL', desc: 'Relational data storage; all transactions and records', badge: 'Data Layer', badgeClass: 'badge-warning' },
-                  { icon: '📊', bg: 'var(--gold-light)', name: 'Analytics — Python / Prophet', desc: 'Time-series forecasting; scikit-learn preprocessing', badge: 'AI Layer', badgeClass: 'badge-gold' },
-                  { icon: '🌐', bg: 'var(--surface2)', name: 'Platform — Desktop / Web', desc: 'Single-branch deployment; no mobile app', badge: 'Deployment', badgeClass: 'badge-neutral' }
+                  { bg: 'var(--blue-light)', name: 'Frontend — React.js / Electron', desc: 'Desktop & web-based interface; responsive UI', badge: 'UI Layer', badgeClass: 'badge-info' },
+                  { bg: 'var(--accent-light)', name: 'Backend — Spring Boot', desc: 'REST API, authentication, business logic', badge: 'API Layer', badgeClass: 'badge-success' },
+                  { bg: 'var(--orange-light)', name: 'Database — PostgreSQL', desc: 'Relational data storage; all transactions and records', badge: 'Data Layer', badgeClass: 'badge-warning' },
+                  { bg: 'var(--gold-light)', name: 'Analytics — Python / Prophet', desc: 'Time-series forecasting; scikit-learn preprocessing', badge: 'AI Layer', badgeClass: 'badge-gold' },
+                  { bg: 'var(--surface2)', name: 'Platform — Desktop / Web', desc: 'Single-branch deployment; no mobile app', badge: 'Deployment', badgeClass: 'badge-neutral' }
                 ].map((module) => (
                   <div className="module-row" key={module.name}>
-                    <div className="module-row-icon" style={{ background: module.bg }}>{module.icon}</div>
                     <div className="module-row-info">
                       <div className="module-row-name">{module.name}</div>
                       <div className="module-row-desc">{module.desc}</div>
@@ -1345,7 +1341,7 @@ function App() {
                     { label: 'Multi-branch / payroll', success: false }
                   ].map((item) => (
                     <div key={item.label} style={{ marginBottom: 6 }}>
-                      <span className={`badge ${item.success ? 'badge-success' : 'badge-danger'}`}>{item.success ? '✓' : '✗'}</span> &nbsp;{item.label}
+                      <span className={`badge ${item.success ? 'badge-success' : 'badge-danger'}`}>{item.success ? 'Included' : 'Excluded'}</span> {item.label}
                     </div>
                   ))}
                 </div>
@@ -1394,7 +1390,7 @@ function App() {
           <div className="modal-content profile-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>User Profile</h3>
-              <button className="modal-close" onClick={() => setShowProfileModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowProfileModal(false)}>Close</button>
             </div>
             <div className="modal-body">
               {/* My Profile Section */}
@@ -1601,7 +1597,6 @@ function App() {
               {!isAdmin && (
                 <div className="profile-section">
                   <div className="staff-notice">
-                    <div className="notice-icon">👁️</div>
                     <div className="notice-text">
                       <strong>Staff Access</strong><br />
                       You have access to POS, inventory viewing, and transaction records. Contact an administrator for account management.
@@ -1620,11 +1615,10 @@ function App() {
           <div className="modal-content delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Delete Account</h3>
-              <button className="modal-close" onClick={() => setDeleteConfirmation(null)}>×</button>
+              <button className="modal-close" onClick={() => setDeleteConfirmation(null)}>Close</button>
             </div>
             <div className="modal-body">
               <div className="warning-message">
-                <div className="warning-icon">⚠️</div>
                 <div>
                   <strong>Are you sure you want to delete this account?</strong>
                   <p style={{marginTop: '8px', fontSize: '13px', color: 'var(--text3)'}}>
