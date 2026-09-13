@@ -1,0 +1,27 @@
+2026-09-13T23:04:55.103+08:00  INFO 8084 --- [           main] c.a.optical.AlmedaOpticalApplication     : Starting AlmedaOpticalApplication v0.0.1-SNAPSHOT using Java 26.0.2.1 with PID 8084 (C:\Users\leigh\OneDrive\Desktop\Github\protype-capstone\backend\target\almeda-optical-backend-0.0.1-SNAPSHOT.jar started by leigh in C:\Users\leigh\OneDrive\Desktop\Github\protype-capstone)
+2026-09-13T23:04:55.117+08:00  INFO 8084 --- [           main] c.a.optical.AlmedaOpticalApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-09-13T23:04:58.613+08:00  INFO 8084 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-13T23:04:58.987+08:00  INFO 8084 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 344 ms. Found 8 JPA repository interfaces.
+2026-09-13T23:05:02.431+08:00  INFO 8084 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2026-09-13T23:05:02.465+08:00  INFO 8084 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-13T23:05:02.466+08:00  INFO 8084 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.13]
+2026-09-13T23:05:02.853+08:00  INFO 8084 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-09-13T23:05:02.869+08:00  INFO 8084 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 7417 ms
+2026-09-13T23:05:03.865+08:00  INFO 8084 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-09-13T23:05:04.393+08:00  INFO 8084 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.2.9.Final
+2026-09-13T23:05:04.407+08:00  INFO 8084 --- [           main] org.hibernate.cfg.Environment            : HHH000406: Using bytecode reflection optimizer
+2026-09-13T23:05:05.298+08:00  INFO 8084 --- [           main] o.h.b.i.BytecodeProviderInitiator        : HHH000021: Bytecode provider name : bytebuddy
+2026-09-13T23:05:06.240+08:00  INFO 8084 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-13T23:05:06.601+08:00  INFO 8084 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-13T23:05:08.251+08:00  INFO 8084 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6bd51ed8
+2026-09-13T23:05:08.257+08:00  INFO 8084 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-13T23:05:08.339+08:00  WARN 8084 --- [           main] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2026-09-13T23:05:10.214+08:00  INFO 8084 --- [           main] o.h.b.i.BytecodeProviderInitiator        : HHH000021: Bytecode provider name : bytebuddy
+2026-09-13T23:05:14.163+08:00  INFO 8084 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-09-13T23:05:14.625+08:00  INFO 8084 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-13T23:05:18.503+08:00  WARN 8084 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-09-13T23:05:20.533+08:00  INFO 8084 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2026-09-13T23:05:20.586+08:00  INFO 8084 --- [           main] c.a.optical.AlmedaOpticalApplication     : Started AlmedaOpticalApplication in 27.75 seconds (process running for 29.535)
+2026-09-13T23:05:21.038+08:00  INFO 8084 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-13T23:05:21.048+08:00  INFO 8084 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-13T23:05:21.053+08:00  INFO 8084 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms

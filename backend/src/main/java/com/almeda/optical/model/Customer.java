@@ -17,11 +17,14 @@ public class Customer {
   @Column(nullable = false)
   private String name;
 
+  @Column(name = "contact_number")
+  private String contactNumber;
+
+  @Column
+  private String email;
+
   @Column(name = "card_no", nullable = false, unique = true)
   private String cardNo;
-
-  @Column(nullable = false)
-  private String tier;
 
   @Column(nullable = false)
   private Integer points;
@@ -35,18 +38,23 @@ public class Customer {
   @Column(nullable = false)
   private String status;
 
+  @Column(name = "prescription_od")
+  private String prescriptionOd;
+
+  @Column(name = "prescription_os")
+  private String prescriptionOs;
+
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
   public Customer() {}
 
-  public Customer(Integer id, String initials, String name, String cardNo, String tier, Integer points,
+  public Customer(Integer id, String initials, String name, String cardNo, Integer points,
                   Double totalSpend, String lastVisit, String status, LocalDateTime createdAt) {
     this.id = id;
     this.initials = initials;
     this.name = name;
     this.cardNo = cardNo;
-    this.tier = tier;
     this.points = points;
     this.totalSpend = totalSpend;
     this.lastVisit = lastVisit;
@@ -78,20 +86,28 @@ public class Customer {
     this.name = name;
   }
 
+  public String getContactNumber() {
+    return contactNumber;
+  }
+
+  public void setContactNumber(String contactNumber) {
+    this.contactNumber = contactNumber;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
   public String getCardNo() {
     return cardNo;
   }
 
   public void setCardNo(String cardNo) {
     this.cardNo = cardNo;
-  }
-
-  public String getTier() {
-    return tier;
-  }
-
-  public void setTier(String tier) {
-    this.tier = tier;
   }
 
   public Integer getPoints() {
@@ -124,6 +140,22 @@ public class Customer {
 
   public void setStatus(String status) {
     this.status = status;
+  }
+
+  public String getPrescriptionOd() {
+    return prescriptionOd;
+  }
+
+  public void setPrescriptionOd(String prescriptionOd) {
+    this.prescriptionOd = prescriptionOd;
+  }
+
+  public String getPrescriptionOs() {
+    return prescriptionOs;
+  }
+
+  public void setPrescriptionOs(String prescriptionOs) {
+    this.prescriptionOs = prescriptionOs;
   }
 
   public LocalDateTime getCreatedAt() {

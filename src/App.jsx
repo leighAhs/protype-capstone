@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchInventory, createInventoryItem, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
+import { fetchInventory, createInventoryItem, createCustomer, createTransaction, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
 
 const pageLabels = {
   dashboard: ['Dashboard', 'Overview'],
@@ -102,6 +102,8 @@ function App() {
   const [inventoryProducts, setInventoryProducts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [customerList, setCustomerList] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [transactionSearch, setTransactionSearch] = useState('');
   const [topDemandData, setTopDemandData] = useState([]);
   const [forecastMonthlyData, setForecastMonthlyData] = useState([]);
   const [showInventoryForm, setShowInventoryForm] = useState(false);
@@ -115,6 +117,8 @@ function App() {
   });
   const [inventoryMessage, setInventoryMessage] = useState('');
   const [inventoryError, setInventoryError] = useState('');
+  const [transactionMessage, setTransactionMessage] = useState('');
+  const [transactionError, setTransactionError] = useState('');
   const [projectError, setProjectError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('');
@@ -123,6 +127,8 @@ function App() {
   const [users, setUsers] = useState([]);
   const [showUserForm, setShowUserForm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingOwnProfile, setEditingOwnProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ username: '', password: '', displayName: '' });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
@@ -188,24 +194,42 @@ function App() {
       badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
     }));
 
-  const recordRows = transactions.map((tx) => ({
-    id: tx.txnId || tx.id,
-    date: tx.txDate || tx.date || '—',
-    customer: tx.customerName || tx.customer || '—',
-    items: tx.items || tx.item || '—',
-    amount: formatCurrency(tx.amount),
-    payment: tx.payment || '—',
-    status: tx.status || 'Pending',
-    badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
-  }));
+  const recordRows = transactions
+    .map((tx) => ({
+      id: tx.txnId || tx.tx_id || tx.id,
+      date: tx.txDate || tx.date || '—',
+      customer: tx.customerName || tx.customer_name || tx.customer || '—',
+      items: tx.item_summary || tx.items || tx.item || '—',
+      amount: formatCurrency(tx.amount),
+      payment: tx.payment_method || tx.payment || '—',
+      status: tx.status || 'Pending',
+      badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
+    }))
+    .filter((record) => {
+      const query = transactionSearch.trim().toLowerCase();
+      if (!query) return true;
+      return `${record.id || ''} ${record.customer} ${record.items}`.toLowerCase().includes(query);
+    });
 
-  const customerRows = customerList.map((customer) => ({
-    ...customer,
-    card: customer.cardNo || customer.card || 'N/A',
-    spend: formatCurrency(customer.totalSpend || customer.spend || 0),
-    visited: customer.lastVisit || customer.last_visit || 'N/A',
-    statusClass: customer.status === 'Active' ? 'badge-success' : 'badge-warning'
-  }));
+  const customerRows = customerList
+    .map((customer) => ({
+      ...customer,
+      card: customer.cardNo || customer.card || 'N/A',
+      spend: formatCurrency(customer.totalSpend || customer.spend || 0),
+      visited: customer.lastVisit || customer.last_visit || 'N/A',
+      statusClass: customer.status === 'Active' ? 'badge-success' : 'badge-warning'
+    }))
+    .filter((customer) => {
+      const query = customerSearch.trim().toLowerCase();
+      if (!query) return true;
+      return `${customer.name || ''} ${customer.card}`.toLowerCase().includes(query);
+    })
+    .sort((firstCustomer, secondCustomer) => (firstCustomer.name || '').localeCompare(secondCustomer.name || ''));
+
+  const openCustomerProfile = (customer) => {
+    setSelectedCustomer(customer);
+    setShowCustomerModal(true);
+  };
 
   const topDemandRows = topDemandData.map((item) => ({
     product: item.product || item.name || '—',
@@ -325,6 +349,46 @@ function App() {
 
   const handleInventoryInput = (field, value) => {
     setNewInventoryItem((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleTransactionSubmit = async (event) => {
+    event.preventDefault();
+    setTransactionMessage('');
+    setTransactionError('');
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const name = String(formData.get('customerName') || '').trim();
+    const quantity = Number(formData.get('quantity') || 0);
+    const unitPrice = Number(String(formData.get('unitPrice') || '').replace(/[^0-9.]/g, '')) || 0;
+
+    if (!name) {
+      setTransactionError('Please enter the customer name.');
+      return;
+    }
+
+    try {
+      const customer = await createCustomer({
+        name,
+        contactNumber: String(formData.get('contactNumber') || '').trim() || null,
+        email: String(formData.get('email') || '').trim() || null,
+        totalSpend: quantity * unitPrice,
+        prescriptionOd: String(formData.get('prescriptionOd') || '').trim() || null,
+        prescriptionOs: String(formData.get('prescriptionOs') || '').trim() || null
+      });
+      const transaction = await createTransaction({
+        customerName: name,
+        item: String(formData.get('item') || '').trim(),
+        amount: quantity * unitPrice,
+        payment: String(formData.get('paymentMethod') || '').trim()
+      });
+      setCustomerList((previousCustomers) => [customer, ...previousCustomers]);
+      setTransactions((previousTransactions) => [transaction, ...previousTransactions]);
+      setTransactionMessage(`${customer.name} was added to the customer directory.`);
+      form.reset();
+    } catch (error) {
+      setTransactionError(error.message);
+    }
   };
 
   const handleUserFormChange = (field, value) => {
@@ -768,24 +832,24 @@ function App() {
               <div className="page-subtitle">Paperless point-of-sale — TXN-0892</div>
             </div>
 
-            <div className="grid-2">
+            <form className="grid-2" onSubmit={handleTransactionSubmit}>
               <div>
                 <div className="card mb-4">
                   <div className="card-title">Customer Information</div>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Customer Name</label>
-                      <input className="form-input" type="text" defaultValue="Maria Santos" placeholder="Full name" />
+                      <input className="form-input" name="customerName" type="text" defaultValue="Maria Santos" placeholder="Full name" required />
                     </div>
                     <div className="form-group">
                       <label className="form-label">Contact Number</label>
-                      <input className="form-input" type="tel" defaultValue="09171234567" />
+                      <input className="form-input" name="contactNumber" type="tel" defaultValue="09171234567" />
                     </div>
                   </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Email Address</label>
-                      <input className="form-input" type="email" placeholder="customer@email.com" />
+                      <input className="form-input" name="email" type="email" placeholder="customer@email.com" />
                     </div>
                   </div>
                 </div>
@@ -795,7 +859,7 @@ function App() {
                   <div className="form-row">
                     <div className="form-group" style={{ flex: 3 }}>
                       <label className="form-label">Item</label>
-                      <select className="form-select">
+                      <select className="form-select" name="item">
                         <option>Eyeglasses Frame — Ray-Ban RB5154</option>
                         <option>Progressive Lens Upgrade</option>
                         <option>Sunglasses — Oakley Holbrook</option>
@@ -807,36 +871,36 @@ function App() {
                     </div>
                     <div className="form-group" style={{ flex: 0.7, minWidth: 70 }}>
                       <label className="form-label">Qty</label>
-                      <input className="form-input" type="number" defaultValue="1" min="1" />
+                      <input className="form-input" name="quantity" type="number" defaultValue="1" min="1" />
                     </div>
                     <div className="form-group" style={{ flex: 1.2 }}>
                       <label className="form-label">Unit Price</label>
-                      <input className="form-input" type="text" defaultValue="₱3,500" />
+                      <input className="form-input" name="unitPrice" type="text" defaultValue="₱3,500" />
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Prescription — OD (Right)</label>
-                      <input className="form-input" placeholder="-1.50 / -0.25 × 180" />
+                      <input className="form-input" name="prescriptionOd" placeholder="-1.50 / -0.25 × 180" />
                     </div>
                     <div className="form-group">
                       <label className="form-label">Prescription — OS (Left)</label>
-                      <input className="form-input" placeholder="-1.25 / -0.50 × 175" />
+                      <input className="form-input" name="prescriptionOs" placeholder="-1.25 / -0.50 × 175" />
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group" style={{ flex: 0.8, minWidth: 80 }}>
                       <label className="form-label">PD</label>
-                      <input className="form-input" placeholder="63mm" />
+                      <input className="form-input" name="pd" placeholder="63mm" />
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Lens Add-ons</label>
-                      <select className="form-select">
+                      <select className="form-select" name="lensAddOn">
                         <option>Anti-reflective coating (+₱450)</option>
                         <option>Photochromic lens (+₱800)</option>
                         <option>Blue light filter (+₱350)</option>
@@ -845,7 +909,7 @@ function App() {
                     </div>
                     <div className="form-group">
                       <label className="form-label">Payment Method</label>
-                      <select className="form-select">
+                      <select className="form-select" name="paymentMethod">
                         <option>Cash</option>
                         <option>GCash</option>
                         <option>Credit Card</option>
@@ -854,18 +918,13 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Notes / Special Instructions</label>
-                      <textarea className="form-textarea" placeholder="e.g. tighten right temple, wrap-around preference..." />
-                    </div>
-                  </div>
-
                   <div className="flex gap-2 mt-4">
-                    <button className="btn btn-primary">Process Transaction</button>
-                    <button className="btn btn-secondary">Save Draft</button>
-                    <button className="btn btn-secondary">Clear</button>
+                    <button type="submit" className="btn btn-primary">Process Transaction</button>
+                    <button type="button" className="btn btn-secondary">Save Draft</button>
+                    <button type="reset" className="btn btn-secondary">Clear</button>
                   </div>
+                  {transactionError ? <div style={{ marginTop: 12, color: 'var(--red)', fontSize: 13 }}>{transactionError}</div> : null}
+                  {transactionMessage ? <div style={{ marginTop: 12, color: 'var(--accent-mid)', fontSize: 13 }}>{transactionMessage}</div> : null}
                 </div>
               </div>
 
@@ -883,20 +942,9 @@ function App() {
                   <div className="receipt-line"><span>Anti-reflective Coating × 1</span><span>₱450.00</span></div>
                   <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Subtotal</span><span>₱5,750.00</span></div>
                   <div className="receipt-total-line"><span>Total Due</span><span>₱5,750.00</span></div>
-
-                  <div style={{ marginTop: 12, padding: 10, background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--text3)' }}>
-                    Prescribed by: Dr. Anna Villanueva · PRC #45281<br />
-                    Pickup/Ready by: April 17, 2026
-                  </div>
-
-                  <div className="flex gap-2 mt-4">
-                    <button className="btn btn-secondary btn-sm full-width">Print</button>
-                    <button className="btn btn-secondary btn-sm full-width">SMS Receipt</button>
-                    <button className="btn btn-secondary btn-sm full-width">Email</button>
-                  </div>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
 
           <div className={`page${currentPage === 'records' ? ' active' : ''}`}>
@@ -905,7 +953,14 @@ function App() {
               <div className="page-subtitle">All paperless sales records — digitized & searchable</div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">Search by customer, TXN ID, item...</div>
+              <input
+                className="search-bar"
+                type="search"
+                value={transactionSearch}
+                onChange={(event) => setTransactionSearch(event.target.value)}
+                placeholder="Search by customer, TXN ID, item..."
+                aria-label="Search transactions by customer, transaction ID, or item"
+              />
               <select className="form-select" style={{ width: 'auto' }}>
                 <option>All Payment Types</option>
                 <option>Cash</option>
@@ -957,7 +1012,14 @@ function App() {
               <div className="page-subtitle">All registered customers and their profiles</div>
             </div>
             <div className="top-actions">
-              <div className="search-bar">Search by name or card no...</div>
+              <input
+                className="search-bar"
+                type="search"
+                value={customerSearch}
+                onChange={(event) => setCustomerSearch(event.target.value)}
+                placeholder="Search by name or card no..."
+                aria-label="Search customers by name or card number"
+              />
               <button className="btn btn-primary btn-sm">+ Register Customer</button>
             </div>
             <div className="card">
@@ -976,7 +1038,7 @@ function App() {
                       <td>{customer.spend}</td>
                       <td>{customer.visited}</td>
                       <td><span className={`badge ${customer.statusClass}`}>{customer.status}</span></td>
-                      <td><button className="btn btn-secondary btn-sm">Profile</button></td>
+                      <td><button className="btn btn-secondary btn-sm" onClick={() => openCustomerProfile(customer)}>Profile</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1383,6 +1445,42 @@ function App() {
           </div>
         </div>
       </div>
+
+      {showCustomerModal && selectedCustomer && (
+        <div className="modal-overlay" onClick={() => setShowCustomerModal(false)}>
+          <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Customer Profile</h3>
+              <button className="modal-close" onClick={() => setShowCustomerModal(false)} aria-label="Close customer profile">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="profile-header">
+                <div className="profile-avatar">{selectedCustomer.initials || selectedCustomer.name?.charAt(0) || '?'}</div>
+                <div className="profile-info">
+                  <div className="profile-name">{selectedCustomer.name || 'N/A'}</div>
+                </div>
+              </div>
+              <div className="customer-detail-grid">
+                <div className="profile-row"><span className="profile-label">Initials</span><span>{selectedCustomer.initials || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Contact Number</span><span>{selectedCustomer.contactNumber || selectedCustomer.contact_number || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Email</span><span>{selectedCustomer.email || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Points</span><span>{selectedCustomer.points ?? 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Total Spend</span><span>{formatCurrency(selectedCustomer.totalSpend)}</span></div>
+                <div className="profile-row"><span className="profile-label">Last Visit</span><span>{selectedCustomer.lastVisit || selectedCustomer.last_visit || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Status</span><span className={`badge ${selectedCustomer.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>{selectedCustomer.status || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Created At</span><span>{selectedCustomer.createdAt || selectedCustomer.created_at || 'N/A'}</span></div>
+              </div>
+              <div className="profile-section customer-prescription">
+                <h4>Prescription</h4>
+                <div className="prescription-values">
+                  <div><span className="profile-label">OD (Right)</span><strong>{selectedCustomer.prescriptionOd || selectedCustomer.prescription_od || 'Not recorded'}</strong></div>
+                  <div><span className="profile-label">OS (Left)</span><strong>{selectedCustomer.prescriptionOs || selectedCustomer.prescription_os || 'Not recorded'}</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       {showProfileModal && (

@@ -117,6 +117,28 @@ export async function fetchTransactions() {
   return await checkResponse(response);
 }
 
+export async function createTransaction(transaction) {
+  const response = await fetch(`${API_BASE}/transactions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(transaction)
+  });
+  return await checkResponse(response);
+}
+
+export async function createCustomer(customer) {
+  const response = await fetch(`${API_BASE}/customers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(customer)
+  });
+  return await checkResponse(response);
+}
+
 export async function createInventoryItem(item) {
   const response = await fetch(`${API_BASE}/inventory`, {
     method: 'POST',

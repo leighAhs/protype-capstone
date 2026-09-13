@@ -74,6 +74,50 @@ public class ApiController {
     return transactionRepository.findAll();
   }
 
+  @PostMapping("/transactions")
+  public Transaction addTransaction(@RequestBody TransactionPayload payload) {
+    LocalDateTime now = LocalDateTime.now();
+    Transaction transaction = new Transaction();
+    transaction.setTxnId("TXN-" + now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")));
+    transaction.setTxDate(now.toLocalDate().toString());
+    transaction.setTxTime(now.toLocalTime().withNano(0).toString());
+    transaction.setCustomerName(payload.customerName());
+    transaction.setItems(payload.item());
+    transaction.setAmount(payload.amount());
+    transaction.setPayment(payload.payment());
+    transaction.setStatus("Paid");
+    transaction.setCreatedAt(now);
+    return transactionRepository.save(transaction);
+  }
+
+  @PostMapping("/customers")
+  public Customer addCustomer(@RequestBody CustomerPayload payload) {
+    String name = payload.name() == null ? "" : payload.name().trim();
+    if (name.isBlank()) {
+      throw new IllegalArgumentException("Customer name is required.");
+    }
+
+    String[] nameParts = name.split("\\s+");
+    String initials = nameParts.length == 1
+        ? nameParts[0].substring(0, 1).toUpperCase()
+        : (nameParts[0].substring(0, 1) + nameParts[nameParts.length - 1].substring(0, 1)).toUpperCase();
+
+    Customer customer = new Customer();
+    customer.setInitials(initials);
+    customer.setName(name);
+    customer.setContactNumber(payload.contactNumber());
+    customer.setEmail(payload.email());
+    customer.setCardNo("ALM-" + System.currentTimeMillis());
+    customer.setPoints(0);
+    customer.setTotalSpend(payload.totalSpend() == null ? 0.0 : payload.totalSpend());
+    customer.setLastVisit(LocalDate.now().toString());
+    customer.setStatus("Active");
+    customer.setPrescriptionOd(payload.prescriptionOd());
+    customer.setPrescriptionOs(payload.prescriptionOs());
+    customer.setCreatedAt(LocalDateTime.now());
+    return customerRepository.save(customer);
+  }
+
   @PostMapping("/inventory")
   public InventoryProduct addInventory(@RequestBody InventoryPayload payload) {
     String now = LocalDate.now().toString();
@@ -94,4 +138,6 @@ public class ApiController {
 
   private record Credential(String username, String password) {}
   private record InventoryPayload(String name, String sku, String category) {}
+  private record CustomerPayload(String name, String contactNumber, String email, Double totalSpend, String prescriptionOd, String prescriptionOs) {}
+  private record TransactionPayload(String customerName, String item, Double amount, String payment) {}
 }
