@@ -32,6 +32,9 @@ public class Transaction {
   @Column(name = "rx_by")
   private String rxBy;
 
+  @Column(name = "item_status")
+  private String itemStatus;
+
   @Column(nullable = false)
   private String status;
 
@@ -119,6 +122,14 @@ public class Transaction {
 
   public void setRxBy(String rxBy) {
     this.rxBy = rxBy;
+  }
+
+  public String getItemStatus() {
+    return itemStatus;
+  }
+
+  public void setItemStatus(String itemStatus) {
+    this.itemStatus = itemStatus;
   }
 
   public String getStatus() {

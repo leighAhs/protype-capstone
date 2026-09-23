@@ -4,6 +4,7 @@ com\almeda\optical\repository\UserRepository.class
 com\almeda\optical\controller\AuthController$AuthRequest.class
 com\almeda\optical\controller\UserController$UserPayload.class
 com\almeda\optical\repository\UserActivityLogRepository.class
+com\almeda\optical\controller\ApiController$ItemStatusPayload.class
 com\almeda\optical\model\UserActivityLog.class
 com\almeda\optical\controller\AuthController.class
 com\almeda\optical\controller\UserController.class

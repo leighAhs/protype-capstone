@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchInventory, createInventoryItem, createCustomer, createTransaction, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
+import { fetchInventory, createInventoryItem, createCustomer, createTransaction, updateTransactionItemStatus, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
 
 const pageLabels = {
   dashboard: ['Dashboard', 'Overview'],
@@ -26,7 +26,6 @@ const navItems = [
   {
     section: 'Operations',
     items: [
-      { id: 'inventory', label: 'Inventory' },
       { id: 'forecast', label: 'Sales Forecast' }
     ]
   },
@@ -69,12 +68,6 @@ const specs = [
   { label: 'Update Frequency', value: 'Daily' }
 ];
 
-const reportStats = [
-  { value: '₱189K', label: 'Month Revenue' },
-  { value: '302', label: 'Transactions' },
-  { value: '₱626', label: 'Avg. Ticket Size' }
-];
-
 function ChartBars({ actual, forecast, labels, maxH = 80, style }) {
   const max = Math.max(...actual, ...forecast, 1);
   return (
@@ -107,6 +100,7 @@ function App() {
   const [transactionPaymentFilter, setTransactionPaymentFilter] = useState('all');
   const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
   const [transactionDateFilter, setTransactionDateFilter] = useState('all');
+  const [transactionPage, setTransactionPage] = useState(0);
   const [topDemandData, setTopDemandData] = useState([]);
   const [forecastMonthlyData, setForecastMonthlyData] = useState([]);
   const [showInventoryForm, setShowInventoryForm] = useState(false);
@@ -123,23 +117,10 @@ function App() {
   const [transactionMessage, setTransactionMessage] = useState('');
   const [transactionError, setTransactionError] = useState('');
   const [transactionPreview, setTransactionPreview] = useState({
-    name: 'Maria Santos',
-    age: '34',
-    address: '123 San Miguel St., Mandaluyong',
-    contactNumber: '09171234567',
-    item: 'Eyeglasses Frame — Ray-Ban RB5154',
-    quantity: '1',
-    unitPrice: '₱3,500',
-    prescriptionOd: '-1.50 / -0.25 × 180',
-    prescriptionOs: '-1.25 / -0.50 × 175',
-    pd: '63mm',
-    lensAddOn: 'Anti-reflective coating (+₱450)',
-    payment: 'Cash',
+    name: '', age: '', address: '', contactNumber: '', item: '', quantity: '', unitPrice: '',
+    prescriptionOd: '', prescriptionOs: '', pd: '', lensAddOn: '', payment: '', paymentStatus: '',
     rxBy: '',
-    txnId: 'TXN-0892',
-    date: 'April 12, 2026',
-    time: '10:34 AM',
-    amount: 5750
+    txnId: '', date: '', time: '', amount: 0
   });
   const [projectError, setProjectError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -153,6 +134,7 @@ function App() {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [pendingStatusConfirmation, setPendingStatusConfirmation] = useState(null);
   const [editingOwnProfile, setEditingOwnProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ username: '', password: '', displayName: '' });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
@@ -170,6 +152,11 @@ function App() {
     // Clear any stored user on app load to require fresh login
     localStorage.removeItem('loggedInUser');
   }, []);
+
+  useEffect(() => {
+    setTransactionPage(0);
+  }, [transactionSearch, transactionPaymentFilter, transactionStatusFilter, transactionDateFilter]);
+
   const [editingUser, setEditingUser] = useState(null);
   const [userMessage, setUserMessage] = useState('');
   const [userError, setUserError] = useState('');
@@ -215,7 +202,8 @@ function App() {
       amount: formatCurrency(tx.amount),
       payment: tx.payment_method || tx.payment || tx.paymentMethod || '—',
       status: tx.status || 'Pending',
-      badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
+      itemStatus: tx.itemStatus || tx.item_status || 'Completed',
+      badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Half Paid' ? 'badge-warning' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
     }));
 
   const today = new Date();
@@ -235,8 +223,10 @@ function App() {
       amount: formatCurrency(tx.amount),
       payment: tx.payment_method || tx.payment || '—',
       rxBy: tx.rxBy || tx.rx_by || 'N/A',
-      status: tx.status || 'Pending',
-      badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
+      paymentStatus: tx.status || 'Pending',
+      itemStatus: tx.itemStatus || tx.item_status || 'Completed',
+      paymentBadge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Half Paid' ? 'badge-warning' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning',
+      itemBadge: (tx.itemStatus || tx.item_status || 'Completed') === 'Processing' ? 'badge-info' : 'badge-success'
     }))
     .filter((record) => {
       const query = transactionSearch.trim().toLowerCase();
@@ -258,8 +248,36 @@ function App() {
     })
     .filter((record) => {
       if (transactionStatusFilter === 'all') return true;
-      return record.status.toLowerCase() === transactionStatusFilter.toLowerCase();
+      return record.paymentStatus.toLowerCase() === transactionStatusFilter.toLowerCase();
     });
+
+  const pendingItemRows = transactions
+    .map((tx) => ({
+      id: tx.txnId || tx.tx_id || tx.id,
+      customer: tx.customerName || tx.customer_name || tx.customer || '—',
+      item: tx.item_summary || tx.items || tx.item || '—',
+      date: tx.txDate || tx.date || tx.tx_date || '—',
+      itemStatus: tx.itemStatus || tx.item_status || (tx.status === 'Processing' ? 'Processing' : 'Completed')
+    }))
+    .filter((record) => record.itemStatus.toLowerCase() === 'processing');
+
+  const readyItemRows = transactions
+    .map((tx) => ({
+      id: tx.txnId || tx.tx_id || tx.id,
+      customer: tx.customerName || tx.customer_name || tx.customer || '—',
+      item: tx.item_summary || tx.items || tx.item || '—',
+      date: tx.txDate || tx.date || tx.tx_date || '—',
+      itemStatus: tx.itemStatus || tx.item_status || 'Completed'
+    }))
+    .filter((record) => record.itemStatus.toLowerCase() === 'ready');
+
+  const transactionsPerPage = 10;
+  const transactionPageCount = Math.max(1, Math.ceil(recordRows.length / transactionsPerPage));
+  const currentTransactionPage = Math.min(transactionPage, transactionPageCount - 1);
+  const visibleRecordRows = recordRows.slice(
+    currentTransactionPage * transactionsPerPage,
+    (currentTransactionPage + 1) * transactionsPerPage
+  );
 
   const customerRows = customerList
     .map((customer) => ({
@@ -286,6 +304,26 @@ function App() {
     setShowTransactionModal(true);
   };
 
+  const handleItemStatusChange = (txnId, itemStatus) => {
+    setPendingStatusConfirmation({ txnId, itemStatus });
+  };
+
+  const confirmItemStatusChange = async () => {
+    if (!pendingStatusConfirmation) return;
+    const { txnId, itemStatus } = pendingStatusConfirmation;
+    setPendingStatusConfirmation(null);
+    setTransactionError('');
+    try {
+      const updatedTransaction = await updateTransactionItemStatus(txnId, itemStatus);
+      setTransactions((previousTransactions) => previousTransactions.map((transaction) => {
+        const currentId = transaction.txnId || transaction.tx_id || transaction.id;
+        return currentId === txnId ? { ...transaction, ...updatedTransaction, itemStatus } : transaction;
+      }));
+    } catch (error) {
+      setTransactionError(error.message);
+    }
+  };
+
   const topDemandRows = topDemandData.map((item) => ({
     product: item.product || item.name || '—',
     units: item.units || '—',
@@ -304,8 +342,20 @@ function App() {
     badgeClass: row.type === 'Forecast' ? 'badge-warning' : 'badge-neutral',
     rowStyle: row.type === 'Forecast' ? { background: 'var(--accent-light)' } : {}
   }));
+  const chartForecastValues = forecastMonthlyData.slice(0, 10).map((row) => Number(row.revenue || 0) / 1000);
+  const chartLabels = forecastMonthlyData.slice(0, 10).map((row) => row.month || '—');
 
   const labels = pageLabels[currentPage] || [currentPage, ''];
+  const currentDateLabel = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
+  const todayDateKey = new Date().toISOString().slice(0, 10);
+  const todayTransactions = transactions.filter((transaction) => (transaction.txDate || transaction.tx_date) === todayDateKey);
+  const todayRevenue = todayTransactions.reduce((total, transaction) => total + Number(transaction.amount || 0), 0);
+  const averageTransaction = transactions.length ? transactions.reduce((total, transaction) => total + Number(transaction.amount || 0), 0) / transactions.length : 0;
+  const reportStats = [
+    { value: formatCurrency(todayRevenue), label: 'Today Revenue' },
+    { value: String(todayTransactions.length), label: 'Today Transactions' },
+    { value: formatCurrency(averageTransaction), label: 'Average Ticket' }
+  ];
   const isAdmin = loggedInUser?.role?.toString().toUpperCase() === 'ADMIN';
   const isStaff = loggedInUser?.role?.toString().toUpperCase() === 'STAFF';
   const canEditInventory = isAdmin;
@@ -431,7 +481,9 @@ function App() {
       const pd = String(formData.get('pd') || '').trim();
       const lensAddOn = String(formData.get('lensAddOn') || '').trim();
       const payment = String(formData.get('paymentMethod') || '').trim();
+      const paymentStatus = String(formData.get('paymentStatus') || 'Paid').trim();
       const rxBy = String(formData.get('rxBy') || '').trim();
+      const itemStatus = String(formData.get('itemStatus') || 'Processing').trim();
       const customer = await createCustomer({
         name,
         age: age || null,
@@ -447,12 +499,20 @@ function App() {
         item,
         amount: quantity * unitPrice,
         payment,
-        rxBy: rxBy || null
+        paymentStatus,
+        rxBy: rxBy || null,
+        itemStatus
       });
 
       const refreshedTransactions = await fetchTransactions();
+      const savedTransactionId = transaction.txnId || transaction.tx_id || transaction.id;
+      const savedTransactions = Array.isArray(refreshedTransactions)
+        ? (refreshedTransactions.some((entry) => (entry.txnId || entry.tx_id || entry.id) === savedTransactionId)
+          ? refreshedTransactions
+          : [transaction, ...refreshedTransactions])
+        : [transaction, ...transactions];
       setCustomerList((previousCustomers) => [customer, ...previousCustomers]);
-      setTransactions(Array.isArray(refreshedTransactions) ? refreshedTransactions : [transaction, ...transactions]);
+      setTransactions(savedTransactions);
       const savedDate = transaction.txDate || transaction.tx_date || new Date().toISOString().slice(0, 10);
       const savedTime = transaction.txTime || transaction.tx_time || new Date().toTimeString().slice(0, 5);
       setTransactionPreview({
@@ -468,6 +528,7 @@ function App() {
         pd,
         lensAddOn,
         payment,
+        paymentStatus,
         rxBy: transaction.rxBy || transaction.rx_by || rxBy,
         txnId: transaction.txnId || transaction.tx_id || '—',
         date: savedDate,
@@ -812,7 +873,7 @@ function App() {
           <span className="topbar-sep">/</span>
           <span className="topbar-breadcrumb">{labels[1]}</span>
           <div className="topbar-right">
-            <div className="topbar-date">April 12, 2026</div>
+            <div className="topbar-date">{currentDateLabel}</div>
             <button className="btn btn-secondary btn-sm" type="button" onClick={handleLogout} style={{ marginRight: 10 }}>Log out</button>
             <button className="notif-btn" type="button">Alerts<span className="notif-dot" /></button>
           </div>
@@ -828,18 +889,18 @@ function App() {
             <div className="kpi-grid">
               <div className="kpi-card green">
                 <div className="kpi-label">Today's Revenue</div>
-                <div className="kpi-value">₱14,280</div>
-                <div className="kpi-sub"><span className="kpi-trend-up">Up 12%</span> vs yesterday</div>
+                <div className="kpi-value">{formatCurrency(todayRevenue)}</div>
+                <div className="kpi-sub">Based on database transactions</div>
               </div>
               <div className="kpi-card blue">
                 <div className="kpi-label">Transactions Today</div>
-                <div className="kpi-value">23</div>
-                <div className="kpi-sub">Since 8:00 AM opening</div>
+                <div className="kpi-value">{todayTransactions.length}</div>
+                <div className="kpi-sub">Transactions recorded today</div>
               </div>
               <div className="kpi-card red">
                 <div className="kpi-label">Low Stock Alerts</div>
                 <div className="kpi-value">{lowStockAlertCount}</div>
-                <div className="kpi-sub"><span className="kpi-trend-down">Up 2</span> new since yesterday</div>
+                <div className="kpi-sub">Based on current inventory</div>
               </div>
             </div>
 
@@ -851,7 +912,7 @@ function App() {
                 </div>
                 <table className="data-table">
                   <thead>
-                    <tr><th>#</th><th>Customer</th><th>Item</th><th>Amount</th><th>Payment</th><th>Status</th></tr>
+                    <tr><th>#</th><th>Customer</th><th>Item</th><th>Amount</th><th>Payment</th><th>Payment Status</th></tr>
                   </thead>
                   <tbody>
                     {recentTransactions.map((transaction) => (
@@ -888,16 +949,16 @@ function App() {
                 <div className="card-title">Monthly Revenue — 2026</div>
                 <ChartBars
                   id="revenue-chart"
-                  actual={[48, 52, 58, 63, 0, 0, 0, 0, 0, 0]}
-                  forecast={[0, 0, 0, 0, 68, 72, 70, 0, 0, 0]}
-                  labels={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']}
+                  actual={chartForecastValues}
+                  forecast={[]}
+                  labels={chartLabels}
                   maxH={80}
                 />
               </div>
               <div className="card">
-                <div className="card-title">Forecast — Next 3 Months</div>
+                <div className="card-title">Forecast Data</div>
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Model confidence: <strong style={{ color: 'var(--accent)' }}>91.3%</strong></div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Loaded from the forecast database table.</div>
                 </div>
                 <table className="data-table">
                   <thead><tr><th>Month</th><th>Projected Revenue</th><th>vs Last Year</th><th>Confidence</th></tr></thead>
@@ -919,7 +980,7 @@ function App() {
           <div className={`page${currentPage === 'pos' ? ' active' : ''}`}>
             <div className="page-header">
               <div className="page-title">New Transaction</div>
-              <div className="page-subtitle">Paperless point-of-sale — TXN-0892</div>
+              <div className="page-subtitle">Paperless point-of-sale</div>
             </div>
 
             <form className="grid-2" onSubmit={handleTransactionSubmit}>
@@ -932,23 +993,23 @@ function App() {
                   <div className="transaction-note-grid two-col">
                     <div className="transaction-note-field">
                       <label>Name</label>
-                      <input className="transaction-note-input" name="customerName" type="text" defaultValue="Maria Santos" placeholder="Full name" required />
+                      <input className="transaction-note-input" name="customerName" type="text" placeholder="Full name" required />
                     </div>
                     <div className="transaction-note-field">
                       <label>Age</label>
-                      <input className="transaction-note-input" name="age" type="number" min="1" defaultValue="34" placeholder="Age" />
+                      <input className="transaction-note-input" name="age" type="number" min="1" placeholder="Age" />
                     </div>
                   </div>
                   <div className="transaction-note-grid">
                     <div className="transaction-note-field">
                       <label>Address</label>
-                      <input className="transaction-note-input" name="address" type="text" defaultValue="123 San Miguel St., Mandaluyong" placeholder="Address" />
+                      <input className="transaction-note-input" name="address" type="text" placeholder="Address" />
                     </div>
                   </div>
                   <div className="transaction-note-grid two-col">
                     <div className="transaction-note-field">
                       <label>Number</label>
-                      <input className="transaction-note-input" name="contactNumber" type="tel" defaultValue="09171234567" />
+                      <input className="transaction-note-input" name="contactNumber" type="tel" placeholder="Contact number" />
                     </div>
                     <div className="transaction-note-field">
                       <label>Email</label>
@@ -966,22 +1027,19 @@ function App() {
                     <div className="transaction-note-field wide">
                       <label>Item</label>
                       <select className="transaction-note-select" name="item">
-                        <option>Eyeglasses Frame — Ray-Ban RB5154</option>
-                        <option>Progressive Lens Upgrade</option>
-                        <option>Sunglasses — Oakley Holbrook</option>
-                        <option>Contact Lenses (6-month supply)</option>
-                        <option>Anti-reflective Coating</option>
-                        <option>Lens Replacement</option>
-                        <option>Eye Examination</option>
+                        <option value="">Select a product or service</option>
+                        {inventoryProducts.map((product) => (
+                          <option key={product.sku} value={product.name}>{product.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="transaction-note-field small">
                       <label>Qty</label>
-                      <input className="transaction-note-input" name="quantity" type="number" defaultValue="1" min="1" />
+                      <input className="transaction-note-input" name="quantity" type="number" min="1" placeholder="Quantity" />
                     </div>
                     <div className="transaction-note-field small">
                       <label>Price</label>
-                      <input className="transaction-note-input" name="unitPrice" type="text" defaultValue="₱3,500" />
+                      <input className="transaction-note-input" name="unitPrice" type="text" placeholder="Unit price" />
                     </div>
                   </div>
 
@@ -1004,10 +1062,10 @@ function App() {
                     <div className="transaction-note-field">
                       <label>Lens Add-on</label>
                       <select className="transaction-note-select" name="lensAddOn">
-                        <option>Anti-reflective coating (+₱450)</option>
-                        <option>Photochromic lens (+₱800)</option>
-                        <option>Blue light filter (+₱350)</option>
-                        <option>None</option>
+                        <option value="None">None</option>
+                        {inventoryProducts.filter((product) => ['Lenses', 'Accessories'].includes(product.category)).map((product) => (
+                          <option key={`addon-${product.sku}`} value={product.name}>{product.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1020,6 +1078,27 @@ function App() {
                         <option>GCash</option>
                         <option>Credit Card</option>
                         <option>Debit Card</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="transaction-note-grid">
+                    <div className="transaction-note-field">
+                      <label>Payment Status</label>
+                      <select className="transaction-note-select" name="paymentStatus" defaultValue="Paid">
+                        <option value="Paid">Paid</option>
+                        <option value="Half Paid">Half Paid</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="transaction-note-grid">
+                    <div className="transaction-note-field">
+                      <label>Item Status</label>
+                      <select className="transaction-note-select pos-item-status-select" name="itemStatus" defaultValue="Processing">
+                        <option value="Processing">Processing</option>
+                        <option value="Ready">Ready for Pickup</option>
+                        <option value="Completed">Completed</option>
                       </select>
                     </div>
                   </div>
@@ -1047,15 +1126,21 @@ function App() {
                 <div className="card mb-4 transaction-note-card transaction-preview-card">
                   <div className="transaction-note-header">
                     <span>Transaction Details</span>
-                    <span className="transaction-note-tag">RX</span>
+                    <span className="transaction-note-tag">Receipt</span>
                   </div>
-                  <div className="transaction-preview-meta">
-                    <div><strong>Almeda Optical Shangri-La</strong></div>
-                    <div>Shangri-La Plaza, Mandaluyong City</div>
-                    <div>{transactionPreview.txnId} · {transactionPreview.date} · {transactionPreview.time}</div>
+                  <div className="transaction-preview-meta transaction-preview-identity">
+                    <div>
+                      <strong>Almeda Optical Shangri-La</strong>
+                      <span>Shangri-La Plaza, Mandaluyong City</span>
+                    </div>
+                    <div className="transaction-preview-reference">
+                      <span>{transactionPreview.txnId || 'New transaction'}</span>
+                      <span>{transactionPreview.date || 'Not processed'}{transactionPreview.time ? ` · ${transactionPreview.time}` : ''}</span>
+                    </div>
                   </div>
 
-                  <div className="transaction-preview-lines">
+                  <div className="transaction-preview-section-label">Customer & Prescription</div>
+                  <div className="transaction-preview-lines transaction-preview-customer">
                     <div className="transaction-preview-line"><span>NAME</span><span>{transactionPreview.name || '—'}</span></div>
                     <div className="transaction-preview-line"><span>AGE</span><span>{transactionPreview.age || '—'}</span></div>
                     <div className="transaction-preview-line"><span>ADD</span><span>{transactionPreview.address || '—'}</span></div>
@@ -1067,14 +1152,23 @@ function App() {
                     <div className="transaction-preview-line"><span>PD</span><span>{transactionPreview.pd || '—'}</span></div>
                   </div>
 
-                  <div className="receipt-line"><span>{transactionPreview.item} × {transactionPreview.quantity}</span><span>{formatCurrency(Number(transactionPreview.unitPrice.replace(/[^0-9.]/g, '')) * Number(transactionPreview.quantity || 0))}</span></div>
-                  <div className="receipt-line"><span>{transactionPreview.lensAddOn}</span><span>Included</span></div>
-                  <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment</span><span>{transactionPreview.payment || '—'}</span></div>
-                  <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Subtotal</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
-                  <div className="receipt-total-line"><span>Total Due</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
-                  <div className="rx-by-block">
-                    <span>RX BY</span>
-                    <div className="rx-by-line">{transactionPreview.rxBy || '—'}</div>
+                  <div className="transaction-preview-section-label">Order Summary</div>
+                  <div className="transaction-preview-charges">
+                    <div className="receipt-line"><span>{transactionPreview.item || 'No product selected'} × {transactionPreview.quantity || '0'}</span><span>{formatCurrency(Number(transactionPreview.unitPrice.replace(/[^0-9.]/g, '')) * Number(transactionPreview.quantity || 0))}</span></div>
+                    {transactionPreview.lensAddOn && transactionPreview.lensAddOn !== 'None' ? <div className="receipt-line"><span>{transactionPreview.lensAddOn}</span><span>Included</span></div> : null}
+                    <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment</span><span>{transactionPreview.payment || '—'}</span></div>
+                    <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment Status</span><span>{transactionPreview.paymentStatus || '—'}</span></div>
+                    <div className="receipt-total-line"><span>Total Due</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
+                  </div>
+                  <div className="transaction-preview-footer">
+                    <div className="rx-by-block">
+                      <span>RX BY</span>
+                      <strong>{transactionPreview.rxBy || 'Not assigned'}</strong>
+                    </div>
+                    <div className="transaction-preview-item-status">
+                      <span>ITEM STATUS</span>
+                      <strong>{transactionPreview.itemStatus || 'Not processed'}</strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1113,10 +1207,11 @@ function App() {
                 style={{ width: 'auto' }}
                 value={transactionStatusFilter}
                 onChange={(event) => setTransactionStatusFilter(event.target.value)}
-                aria-label="Filter transactions by status"
+                aria-label="Filter transactions by payment status"
               >
-                <option value="all">All Status</option>
+                <option value="all">All Payment Statuses</option>
                 <option value="paid">Paid</option>
+                <option value="half paid">Half Paid</option>
                 <option value="processing">Processing</option>
                 <option value="pending">Pending</option>
               </select>
@@ -1135,13 +1230,87 @@ function App() {
               <button className="btn btn-secondary btn-sm">Export CSV</button>
               <button className="btn btn-primary btn-sm" onClick={() => setCurrentPage('pos')}>+ New Transaction</button>
             </div>
+            <div className="card pending-transactions-card">
+              <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Pending Item Transactions</span>
+                <span className="badge badge-info">{pendingItemRows.length} Processing</span>
+              </div>
+              {pendingItemRows.length > 0 ? (
+                <table className="data-table">
+                  <thead>
+                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th></tr>
+                  </thead>
+                  <tbody>
+                    {pendingItemRows.map((record) => (
+                      <tr key={`pending-${record.id}`}>
+                        <td className="text-xs">{record.id}</td>
+                        <td className="name">{record.customer}</td>
+                        <td>{record.item}</td>
+                        <td className="text-xs">{record.date}</td>
+                        <td>
+                          <select
+                            className={`form-select item-status-select item-status-${record.itemStatus.toLowerCase()}`}
+                            value={record.itemStatus === 'Completed' ? 'Completed' : record.itemStatus === 'Ready' ? 'Ready' : 'Processing'}
+                            onChange={(event) => handleItemStatusChange(record.id, event.target.value)}
+                            aria-label={`Item status for ${record.id}`}
+                          >
+                            <option value="Processing">Processing</option>
+                            <option value="Ready">Ready for Pickup</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ color: 'var(--text3)', fontSize: 13 }}>No items are currently being processed.</div>
+              )}
+            </div>
+            <div className="card pending-transactions-card">
+              <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Ready for Pickup</span>
+                <span className="badge badge-warning">{readyItemRows.length} Ready</span>
+              </div>
+              {readyItemRows.length > 0 ? (
+                <table className="data-table">
+                  <thead>
+                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th></tr>
+                  </thead>
+                  <tbody>
+                    {readyItemRows.map((record) => (
+                      <tr key={`ready-${record.id}`}>
+                        <td className="text-xs">{record.id}</td>
+                        <td className="name">{record.customer}</td>
+                        <td>{record.item}</td>
+                        <td className="text-xs">{record.date}</td>
+                        <td>
+                          <select
+                            className="form-select item-status-select item-status-ready"
+                            value="Ready"
+                            onChange={(event) => handleItemStatusChange(record.id, event.target.value)}
+                            aria-label={`Item status for ${record.id}`}
+                          >
+                            <option value="Processing">Processing</option>
+                            <option value="Ready">Ready for Pickup</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ color: 'var(--text3)', fontSize: 13 }}>No items are ready for pickup.</div>
+              )}
+            </div>
             <div className="card">
               <table className="data-table">
                 <thead>
-                  <tr><th>TXN ID</th><th>Date</th><th>Customer</th><th>Item(s)</th><th>Amount</th><th>Payment</th><th>Status</th><th /></tr>
+                  <tr><th>TXN ID</th><th>Date</th><th>Customer</th><th>Item(s)</th><th>Amount</th><th>Payment</th><th>Item Status</th><th>Payment Status</th><th /></tr>
                 </thead>
                 <tbody>
-                  {recordRows.map((record) => (
+                  {visibleRecordRows.map((record) => (
                     <tr key={`${record.id}-${record.date}`}>
                       <td className="text-xs">{record.id}</td>
                       <td className="text-xs">{record.date}</td>
@@ -1149,17 +1318,45 @@ function App() {
                       <td>{record.items}</td>
                       <td>{record.amount}</td>
                       <td>{record.payment}</td>
-                      <td><span className={`badge ${record.badge}`}>{record.status}</span></td>
+                      <td>
+                        {record.itemStatus === 'Completed' ? (
+                          <span className="badge badge-success">Completed</span>
+                        ) : (
+                          <select
+                            className={`form-select item-status-select item-status-${record.itemStatus.toLowerCase()}`}
+                            value={record.itemStatus === 'Ready' ? 'Ready' : 'Processing'}
+                            onChange={(event) => handleItemStatusChange(record.id, event.target.value)}
+                            aria-label={`Item status for ${record.id}`}
+                          >
+                            <option value="Processing">Processing</option>
+                            <option value="Ready">Ready for Pickup</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        )}
+                      </td>
+                      <td><span className={`badge ${record.paymentBadge}`}>{record.paymentStatus}</span></td>
                       <td><button className="btn btn-secondary btn-sm" onClick={() => openTransactionDetails(record)}>View</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
-                <span>Showing {recordRows.length} of {transactions.length} records</span>
+                <span>Showing {recordRows.length === 0 ? 0 : currentTransactionPage * transactionsPerPage + 1}-{Math.min((currentTransactionPage + 1) * transactionsPerPage, recordRows.length)} of {recordRows.length} records</span>
                 <div className="flex gap-2">
-                  <button className="btn btn-secondary btn-sm">Previous</button>
-                  <button className="btn btn-secondary btn-sm">Next</button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={currentTransactionPage === 0}
+                    onClick={() => setTransactionPage((page) => Math.max(0, page - 1))}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={currentTransactionPage >= transactionPageCount - 1}
+                    onClick={() => setTransactionPage((page) => Math.min(transactionPageCount - 1, page + 1))}
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             </div>
@@ -1400,10 +1597,13 @@ function App() {
               <div className="page-subtitle">Predictive analytics powered by historical sales data</div>
             </div>
             <div className="kpi-grid">
-              <div className="kpi-card green"><div className="kpi-label">May 2026 Projection</div><div className="kpi-value">₱68,400</div><div className="kpi-sub"><span className="kpi-trend-up">Up 8%</span> vs May 2025</div></div>
-              <div className="kpi-card blue"><div className="kpi-label">Jun 2026 Projection</div><div className="kpi-value">₱72,100</div><div className="kpi-sub"><span className="kpi-trend-up">Up 5%</span> vs Jun 2025</div></div>
-              <div className="kpi-card gold"><div className="kpi-label">Model Accuracy (MAPE)</div><div className="kpi-value">91.3%</div><div className="kpi-sub">Rolling 3-month average</div></div>
-              <div className="kpi-card red"><div className="kpi-label">Restock Recommended</div><div className="kpi-value">7 items</div><div className="kpi-sub">Before May 1, 2026</div></div>
+              {forecastRows.slice(0, 4).map((row, index) => (
+                <div className={`kpi-card ${['green', 'blue', 'gold', 'red'][index]}`} key={row.month}>
+                  <div className="kpi-label">{row.month}</div>
+                  <div className="kpi-value">{row.revenue}</div>
+                  <div className="kpi-sub">{row.action}</div>
+                </div>
+              ))}
             </div>
             <div className="grid-2 mb-4">
               <div className="card">
@@ -1421,7 +1621,7 @@ function App() {
                 </div>
               </div>
               <div className="card">
-                <div className="card-title">Top Demand — May 2026</div>
+                <div className="card-title">Top Demand</div>
                 <table className="data-table">
                   <thead><tr><th>Product</th><th>Projected Units</th><th>Suggested Restock</th></tr></thead>
                   <tbody>
@@ -1580,8 +1780,8 @@ function App() {
                 <div className="card-title">Generate Report</div>
                 <div className="form-row"><div className="form-group"><label className="form-label">Report Type</label><select className="form-select"><option>Daily Sales Summary</option><option>Weekly Inventory Report</option><option>Monthly Revenue Analysis</option><option>Demand Forecast Report</option></select></div></div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Date From</label><input className="form-input" type="date" defaultValue="2026-04-01" /></div>
-                  <div className="form-group"><label className="form-label">Date To</label><input className="form-input" type="date" defaultValue="2026-04-12" /></div>
+                  <div className="form-group"><label className="form-label">Date From</label><input className="form-input" type="date" /></div>
+                  <div className="form-group"><label className="form-label">Date To</label><input className="form-input" type="date" /></div>
                 </div>
                 <div className="flex gap-2 mt-4">
                   <button className="btn btn-primary">Generate Report</button>
@@ -1590,7 +1790,7 @@ function App() {
                 </div>
               </div>
               <div className="card">
-                <div className="card-title">Quick Stats — April 2026</div>
+                <div className="card-title">Quick Stats</div>
                 <div className="grid-2" style={{ gap: 10 }}>
                   {reportStats.map((stat) => (
                     <div key={stat.label} style={{ background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', padding: 12, textAlign: 'center' }}>
@@ -1604,6 +1804,24 @@ function App() {
           </div>
         </div>
       </div>
+
+      {pendingStatusConfirmation && (
+        <div className="modal-overlay" onClick={() => setPendingStatusConfirmation(null)}>
+          <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Item Status</h3>
+              <button className="modal-close" onClick={() => setPendingStatusConfirmation(null)} aria-label="Close confirmation">×</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to mark this item as <strong>{pendingStatusConfirmation.itemStatus === 'Ready' ? 'Ready for Pickup' : pendingStatusConfirmation.itemStatus}</strong>?</p>
+              <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+                <button className="btn btn-secondary" onClick={() => setPendingStatusConfirmation(null)}>Back</button>
+                <button className="btn btn-primary" onClick={confirmItemStatusChange}>Yes, Update Status</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showTransactionModal && selectedTransaction && (
         <div className="modal-overlay" onClick={() => setShowTransactionModal(false)}>
@@ -1620,7 +1838,8 @@ function App() {
                 <div className="profile-row"><span className="profile-label">Item(s)</span><span>{selectedTransaction.items || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Amount</span><span>{selectedTransaction.amount || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Payment</span><span>{selectedTransaction.payment || 'N/A'}</span></div>
-                <div className="profile-row"><span className="profile-label">Status</span><span className={`badge ${selectedTransaction.badge}`}>{selectedTransaction.status || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Item Status</span><span className={`badge ${selectedTransaction.itemBadge}`}>{selectedTransaction.itemStatus || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Payment Status</span><span className={`badge ${selectedTransaction.paymentBadge}`}>{selectedTransaction.paymentStatus || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">RX BY</span><span>{selectedTransaction.rxBy || 'N/A'}</span></div>
               </div>
             </div>

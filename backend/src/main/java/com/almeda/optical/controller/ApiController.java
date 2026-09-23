@@ -16,6 +16,8 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -88,8 +90,21 @@ public class ApiController {
     transaction.setPayment(payload.payment());
     String rxBy = payload.rxBy() == null ? null : payload.rxBy().trim();
     transaction.setRxBy(rxBy == null || rxBy.isBlank() ? null : rxBy);
-    transaction.setStatus("Paid");
+    transaction.setItemStatus(payload.itemStatus() == null || payload.itemStatus().isBlank() ? "Processing" : payload.itemStatus().trim());
+    transaction.setStatus(payload.paymentStatus() == null || payload.paymentStatus().isBlank() ? "Paid" : payload.paymentStatus().trim());
     transaction.setCreatedAt(now);
+    return transactionRepository.save(transaction);
+  }
+
+  @PutMapping("/transactions/{txnId}/item-status")
+  public Transaction updateItemStatus(@PathVariable String txnId, @RequestBody ItemStatusPayload payload) {
+    Transaction transaction = transactionRepository.findByTxnId(txnId)
+        .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + txnId));
+    String itemStatus = payload.itemStatus() == null ? "" : payload.itemStatus().trim();
+    if (!java.util.Set.of("Processing", "Ready", "Completed").contains(itemStatus)) {
+      throw new IllegalArgumentException("Invalid item status.");
+    }
+    transaction.setItemStatus(itemStatus);
     return transactionRepository.save(transaction);
   }
 
@@ -145,5 +160,8 @@ public class ApiController {
   private record InventoryPayload(String name, String sku, String category) {}
   private record CustomerPayload(String name, String contactNumber, Integer age, String address, String email, Double totalSpend, String prescriptionOd, String prescriptionOs) {}
   private record TransactionPayload(String customerName, String item, Double amount, String payment,
-                                    @JsonAlias("rx_by") String rxBy) {}
+                                    @JsonAlias("rx_by") String rxBy,
+                                    @JsonAlias("item_status") String itemStatus,
+                                    @JsonAlias("payment_status") String paymentStatus) {}
+  private record ItemStatusPayload(@JsonAlias("item_status") String itemStatus) {}
 }

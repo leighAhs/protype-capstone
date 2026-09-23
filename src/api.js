@@ -128,6 +128,17 @@ export async function createTransaction(transaction) {
   return await checkResponse(response);
 }
 
+export async function updateTransactionItemStatus(txnId, itemStatus) {
+  const response = await fetch(`${API_BASE}/transactions/${encodeURIComponent(txnId)}/item-status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ itemStatus })
+  });
+  return await checkResponse(response);
+}
+
 export async function createCustomer(customer) {
   const response = await fetch(`${API_BASE}/customers`, {
     method: 'POST',

@@ -462,6 +462,7 @@
     outline: none;
   }
   .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(45,122,82,0.1); }
+
   .form-textarea { resize: vertical; min-height: 80px; }
   .form-hint { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
@@ -587,11 +588,15 @@
   .transaction-note-field.wide { grid-column: span 1; }
   .transaction-note-field.small { min-width: 0; }
 
+  .item-status-processing { background-color: #facc15 !important; }
+  .item-status-ready { background-color: #60a5fa !important; }
+  .item-status-completed { background-color: #4ade80 !important; }
+  .pos-item-status-select { background-color: rgba(255,255,255,0.45) !important; }
+
   .transaction-note-footer {
     position: relative; z-index: 1; margin-top: 10px; }
 
   .transaction-preview-card {
-    min-height: 100%;
     font-family: 'DM Sans', sans-serif;
   }
 
@@ -600,7 +605,35 @@
     font-size: 12px; color: var(--text2);
     margin-bottom: 14px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .transaction-preview-identity {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .transaction-preview-identity strong,
+  .transaction-preview-identity span {
+    display: block;
+  }
+
+  .transaction-preview-identity > div:first-child > span {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+
+  .transaction-preview-reference {
+    text-align: right;
+    white-space: nowrap;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .transaction-preview-reference span:first-child {
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   .transaction-preview-meta strong {
@@ -613,6 +646,61 @@
     position: relative; z-index: 1;
     display: grid; gap: 8px;
     margin-bottom: 16px;
+  }
+
+  .transaction-preview-section-label {
+    position: relative;
+    z-index: 1;
+    margin: 14px 0 8px;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .transaction-preview-customer {
+    margin-bottom: 0;
+  }
+
+  .transaction-preview-customer .transaction-preview-line span:last-child {
+    max-width: 72%;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .transaction-preview-charges {
+    position: relative;
+    z-index: 1;
+    padding: 0 10px;
+    border: 1px solid rgba(0,0,0,0.09);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.42);
+  }
+
+  .transaction-preview-charges .receipt-line {
+    gap: 14px;
+  }
+
+  .transaction-preview-charges .receipt-line span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .transaction-preview-charges .receipt-line span:last-child,
+  .transaction-preview-charges .receipt-total-line span:last-child {
+    white-space: nowrap;
+  }
+
+  .transaction-preview-footer {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.12);
   }
 
   .transaction-preview-line {
@@ -629,15 +717,29 @@
 
   .rx-by-block {
     position: relative; z-index: 1;
-    margin-top: 18px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2);
   }
 
-  .rx-by-line {
-    flex: 1;
-    height: 1px;
-    background: rgba(0,0,0,0.28);
+  .rx-by-block strong,
+  .transaction-preview-item-status strong {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .transaction-preview-item-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 
   /* TIER CARDS */
