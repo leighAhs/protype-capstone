@@ -12,6 +12,7 @@ import com.almeda.optical.repository.TransactionRepository;
 import com.almeda.optical.repository.TransactionItemRepository;
 import com.almeda.optical.repository.ForecastMonthlyRepository;
 import com.almeda.optical.repository.TopDemandRepository;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -85,6 +86,8 @@ public class ApiController {
     transaction.setItems(payload.item());
     transaction.setAmount(payload.amount());
     transaction.setPayment(payload.payment());
+    String rxBy = payload.rxBy() == null ? null : payload.rxBy().trim();
+    transaction.setRxBy(rxBy == null || rxBy.isBlank() ? null : rxBy);
     transaction.setStatus("Paid");
     transaction.setCreatedAt(now);
     return transactionRepository.save(transaction);
@@ -106,6 +109,8 @@ public class ApiController {
     customer.setInitials(initials);
     customer.setName(name);
     customer.setContactNumber(payload.contactNumber());
+    customer.setAge(payload.age());
+    customer.setAddress(payload.address());
     customer.setEmail(payload.email());
     customer.setCardNo("ALM-" + System.currentTimeMillis());
     customer.setPoints(0);
@@ -138,6 +143,7 @@ public class ApiController {
 
   private record Credential(String username, String password) {}
   private record InventoryPayload(String name, String sku, String category) {}
-  private record CustomerPayload(String name, String contactNumber, String email, Double totalSpend, String prescriptionOd, String prescriptionOs) {}
-  private record TransactionPayload(String customerName, String item, Double amount, String payment) {}
+  private record CustomerPayload(String name, String contactNumber, Integer age, String address, String email, Double totalSpend, String prescriptionOd, String prescriptionOs) {}
+  private record TransactionPayload(String customerName, String item, Double amount, String payment,
+                                    @JsonAlias("rx_by") String rxBy) {}
 }

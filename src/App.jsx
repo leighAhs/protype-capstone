@@ -104,6 +104,9 @@ function App() {
   const [customerList, setCustomerList] = useState([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [transactionSearch, setTransactionSearch] = useState('');
+  const [transactionPaymentFilter, setTransactionPaymentFilter] = useState('all');
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
+  const [transactionDateFilter, setTransactionDateFilter] = useState('all');
   const [topDemandData, setTopDemandData] = useState([]);
   const [forecastMonthlyData, setForecastMonthlyData] = useState([]);
   const [showInventoryForm, setShowInventoryForm] = useState(false);
@@ -119,6 +122,25 @@ function App() {
   const [inventoryError, setInventoryError] = useState('');
   const [transactionMessage, setTransactionMessage] = useState('');
   const [transactionError, setTransactionError] = useState('');
+  const [transactionPreview, setTransactionPreview] = useState({
+    name: 'Maria Santos',
+    age: '34',
+    address: '123 San Miguel St., Mandaluyong',
+    contactNumber: '09171234567',
+    item: 'Eyeglasses Frame — Ray-Ban RB5154',
+    quantity: '1',
+    unitPrice: '₱3,500',
+    prescriptionOd: '-1.50 / -0.25 × 180',
+    prescriptionOs: '-1.25 / -0.50 × 175',
+    pd: '63mm',
+    lensAddOn: 'Anti-reflective coating (+₱450)',
+    payment: 'Cash',
+    rxBy: '',
+    txnId: 'TXN-0892',
+    date: 'April 12, 2026',
+    time: '10:34 AM',
+    amount: 5750
+  });
   const [projectError, setProjectError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('');
@@ -129,6 +151,8 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [editingOwnProfile, setEditingOwnProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ username: '', password: '', displayName: '' });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
@@ -194,14 +218,23 @@ function App() {
       badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
     }));
 
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const weekStart = new Date(today);
+  const dayOfWeek = weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  const weekStartKey = weekStart.toISOString().slice(0, 10);
+  const monthStartKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
   const recordRows = transactions
     .map((tx) => ({
       id: tx.txnId || tx.tx_id || tx.id,
-      date: tx.txDate || tx.date || '—',
+      date: tx.txDate || tx.date || tx.tx_date || '—',
       customer: tx.customerName || tx.customer_name || tx.customer || '—',
       items: tx.item_summary || tx.items || tx.item || '—',
       amount: formatCurrency(tx.amount),
       payment: tx.payment_method || tx.payment || '—',
+      rxBy: tx.rxBy || tx.rx_by || 'N/A',
       status: tx.status || 'Pending',
       badge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning'
     }))
@@ -209,6 +242,23 @@ function App() {
       const query = transactionSearch.trim().toLowerCase();
       if (!query) return true;
       return `${record.id || ''} ${record.customer} ${record.items}`.toLowerCase().includes(query);
+    })
+    .filter((record) => {
+      if (transactionDateFilter === 'all') return true;
+      const transactionDate = record.date;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(transactionDate)) return false;
+      if (transactionDateFilter === 'today') return transactionDate === todayKey;
+      if (transactionDateFilter === 'week') return transactionDate >= weekStartKey && transactionDate <= todayKey;
+      if (transactionDateFilter === 'month') return transactionDate >= monthStartKey && transactionDate <= todayKey;
+      return true;
+    })
+    .filter((record) => {
+      if (transactionPaymentFilter === 'all') return true;
+      return record.payment.toLowerCase() === transactionPaymentFilter.toLowerCase();
+    })
+    .filter((record) => {
+      if (transactionStatusFilter === 'all') return true;
+      return record.status.toLowerCase() === transactionStatusFilter.toLowerCase();
     });
 
   const customerRows = customerList
@@ -229,6 +279,11 @@ function App() {
   const openCustomerProfile = (customer) => {
     setSelectedCustomer(customer);
     setShowCustomerModal(true);
+  };
+
+  const openTransactionDetails = (record) => {
+    setSelectedTransaction(record);
+    setShowTransactionModal(true);
   };
 
   const topDemandRows = topDemandData.map((item) => ({
@@ -359,6 +414,8 @@ function App() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const name = String(formData.get('customerName') || '').trim();
+    const age = String(formData.get('age') || '').trim();
+    const address = String(formData.get('address') || '').trim();
     const quantity = Number(formData.get('quantity') || 0);
     const unitPrice = Number(String(formData.get('unitPrice') || '').replace(/[^0-9.]/g, '')) || 0;
 
@@ -368,8 +425,17 @@ function App() {
     }
 
     try {
+      const item = String(formData.get('item') || '').trim();
+      const prescriptionOd = String(formData.get('prescriptionOd') || '').trim();
+      const prescriptionOs = String(formData.get('prescriptionOs') || '').trim();
+      const pd = String(formData.get('pd') || '').trim();
+      const lensAddOn = String(formData.get('lensAddOn') || '').trim();
+      const payment = String(formData.get('paymentMethod') || '').trim();
+      const rxBy = String(formData.get('rxBy') || '').trim();
       const customer = await createCustomer({
         name,
+        age: age || null,
+        address: address || null,
         contactNumber: String(formData.get('contactNumber') || '').trim() || null,
         email: String(formData.get('email') || '').trim() || null,
         totalSpend: quantity * unitPrice,
@@ -378,13 +444,37 @@ function App() {
       });
       const transaction = await createTransaction({
         customerName: name,
-        item: String(formData.get('item') || '').trim(),
+        item,
         amount: quantity * unitPrice,
-        payment: String(formData.get('paymentMethod') || '').trim()
+        payment,
+        rxBy: rxBy || null
       });
+
+      const refreshedTransactions = await fetchTransactions();
       setCustomerList((previousCustomers) => [customer, ...previousCustomers]);
-      setTransactions((previousTransactions) => [transaction, ...previousTransactions]);
-      setTransactionMessage(`${customer.name} was added to the customer directory.`);
+      setTransactions(Array.isArray(refreshedTransactions) ? refreshedTransactions : [transaction, ...transactions]);
+      const savedDate = transaction.txDate || transaction.tx_date || new Date().toISOString().slice(0, 10);
+      const savedTime = transaction.txTime || transaction.tx_time || new Date().toTimeString().slice(0, 5);
+      setTransactionPreview({
+        name,
+        age,
+        address,
+        contactNumber: String(formData.get('contactNumber') || '').trim(),
+        item,
+        quantity: String(quantity),
+        unitPrice: String(formData.get('unitPrice') || '').trim(),
+        prescriptionOd,
+        prescriptionOs,
+        pd,
+        lensAddOn,
+        payment,
+        rxBy: transaction.rxBy || transaction.rx_by || rxBy,
+        txnId: transaction.txnId || transaction.tx_id || '—',
+        date: savedDate,
+        time: savedTime,
+        amount: transaction.amount ?? quantity * unitPrice
+      });
+      setTransactionMessage(`${customer.name}'s transaction was saved successfully.`);
       form.reset();
     } catch (error) {
       setTransactionError(error.message);
@@ -834,32 +924,48 @@ function App() {
 
             <form className="grid-2" onSubmit={handleTransactionSubmit}>
               <div>
-                <div className="card mb-4">
-                  <div className="card-title">Customer Information</div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Customer Name</label>
-                      <input className="form-input" name="customerName" type="text" defaultValue="Maria Santos" placeholder="Full name" required />
+                <div className="card mb-4 transaction-note-card">
+                  <div className="transaction-note-header">
+                    <span>Customer Information</span>
+                    <span className="transaction-note-tag">Info</span>
+                  </div>
+                  <div className="transaction-note-grid two-col">
+                    <div className="transaction-note-field">
+                      <label>Name</label>
+                      <input className="transaction-note-input" name="customerName" type="text" defaultValue="Maria Santos" placeholder="Full name" required />
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Contact Number</label>
-                      <input className="form-input" name="contactNumber" type="tel" defaultValue="09171234567" />
+                    <div className="transaction-note-field">
+                      <label>Age</label>
+                      <input className="transaction-note-input" name="age" type="number" min="1" defaultValue="34" placeholder="Age" />
                     </div>
                   </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Email Address</label>
-                      <input className="form-input" name="email" type="email" placeholder="customer@email.com" />
+                  <div className="transaction-note-grid">
+                    <div className="transaction-note-field">
+                      <label>Address</label>
+                      <input className="transaction-note-input" name="address" type="text" defaultValue="123 San Miguel St., Mandaluyong" placeholder="Address" />
+                    </div>
+                  </div>
+                  <div className="transaction-note-grid two-col">
+                    <div className="transaction-note-field">
+                      <label>Number</label>
+                      <input className="transaction-note-input" name="contactNumber" type="tel" defaultValue="09171234567" />
+                    </div>
+                    <div className="transaction-note-field">
+                      <label>Email</label>
+                      <input className="transaction-note-input" name="email" type="email" placeholder="customer@email.com" />
                     </div>
                   </div>
                 </div>
 
-                <div className="card mb-4">
-                  <div className="card-title">Product / Service</div>
-                  <div className="form-row">
-                    <div className="form-group" style={{ flex: 3 }}>
-                      <label className="form-label">Item</label>
-                      <select className="form-select" name="item">
+                <div className="card mb-4 transaction-note-card">
+                  <div className="transaction-note-header">
+                    <span>Product / Service</span>
+                    <span className="transaction-note-tag">Order</span>
+                  </div>
+                  <div className="transaction-note-grid three-col">
+                    <div className="transaction-note-field wide">
+                      <label>Item</label>
+                      <select className="transaction-note-select" name="item">
                         <option>Eyeglasses Frame — Ray-Ban RB5154</option>
                         <option>Progressive Lens Upgrade</option>
                         <option>Sunglasses — Oakley Holbrook</option>
@@ -869,47 +975,47 @@ function App() {
                         <option>Eye Examination</option>
                       </select>
                     </div>
-                    <div className="form-group" style={{ flex: 0.7, minWidth: 70 }}>
-                      <label className="form-label">Qty</label>
-                      <input className="form-input" name="quantity" type="number" defaultValue="1" min="1" />
+                    <div className="transaction-note-field small">
+                      <label>Qty</label>
+                      <input className="transaction-note-input" name="quantity" type="number" defaultValue="1" min="1" />
                     </div>
-                    <div className="form-group" style={{ flex: 1.2 }}>
-                      <label className="form-label">Unit Price</label>
-                      <input className="form-input" name="unitPrice" type="text" defaultValue="₱3,500" />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Prescription — OD (Right)</label>
-                      <input className="form-input" name="prescriptionOd" placeholder="-1.50 / -0.25 × 180" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Prescription — OS (Left)</label>
-                      <input className="form-input" name="prescriptionOs" placeholder="-1.25 / -0.50 × 175" />
+                    <div className="transaction-note-field small">
+                      <label>Price</label>
+                      <input className="transaction-note-input" name="unitPrice" type="text" defaultValue="₱3,500" />
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group" style={{ flex: 0.8, minWidth: 80 }}>
-                      <label className="form-label">PD</label>
-                      <input className="form-input" name="pd" placeholder="63mm" />
+                  <div className="transaction-note-grid two-col">
+                    <div className="transaction-note-field">
+                      <label>OD</label>
+                      <input className="transaction-note-input" name="prescriptionOd" placeholder="-1.50 / -0.25 × 180" />
+                    </div>
+                    <div className="transaction-note-field">
+                      <label>OS</label>
+                      <input className="transaction-note-input" name="prescriptionOs" placeholder="-1.25 / -0.50 × 175" />
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Lens Add-ons</label>
-                      <select className="form-select" name="lensAddOn">
+                  <div className="transaction-note-grid two-col">
+                    <div className="transaction-note-field">
+                      <label>PD</label>
+                      <input className="transaction-note-input" name="pd" placeholder="63mm" />
+                    </div>
+                    <div className="transaction-note-field">
+                      <label>Lens Add-on</label>
+                      <select className="transaction-note-select" name="lensAddOn">
                         <option>Anti-reflective coating (+₱450)</option>
                         <option>Photochromic lens (+₱800)</option>
                         <option>Blue light filter (+₱350)</option>
                         <option>None</option>
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Payment Method</label>
-                      <select className="form-select" name="paymentMethod">
+                  </div>
+
+                  <div className="transaction-note-grid">
+                    <div className="transaction-note-field">
+                      <label>Payment</label>
+                      <select className="transaction-note-select" name="paymentMethod">
                         <option>Cash</option>
                         <option>GCash</option>
                         <option>Credit Card</option>
@@ -918,10 +1024,19 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
-                    <button type="submit" className="btn btn-primary">Process Transaction</button>
-                    <button type="button" className="btn btn-secondary">Save Draft</button>
-                    <button type="reset" className="btn btn-secondary">Clear</button>
+                  <div className="transaction-note-grid">
+                    <div className="transaction-note-field">
+                      <label>RX BY</label>
+                      <input className="transaction-note-input" name="rxBy" type="text" placeholder="Doctor / Optometrist" />
+                    </div>
+                  </div>
+
+                  <div className="transaction-note-footer">
+                    <div className="flex gap-2 mt-4">
+                      <button type="submit" className="btn btn-primary">Process Transaction</button>
+                      <button type="button" className="btn btn-secondary">Save Draft</button>
+                      <button type="reset" className="btn btn-secondary">Clear</button>
+                    </div>
                   </div>
                   {transactionError ? <div style={{ marginTop: 12, color: 'var(--red)', fontSize: 13 }}>{transactionError}</div> : null}
                   {transactionMessage ? <div style={{ marginTop: 12, color: 'var(--accent-mid)', fontSize: 13 }}>{transactionMessage}</div> : null}
@@ -929,19 +1044,38 @@ function App() {
               </div>
 
               <div>
-                <div className="card mb-4">
-                  <div className="card-title">Receipt Preview</div>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                    <strong style={{ fontSize: 14, color: 'var(--text)', fontFamily: "'DM Serif Display',serif" }}>Almeda Optical Shangri-La</strong><br />
-                    Shangri-La Plaza, Mandaluyong City<br />
-                    TXN-0892 · April 12, 2026 · 10:34 AM
+                <div className="card mb-4 transaction-note-card transaction-preview-card">
+                  <div className="transaction-note-header">
+                    <span>Transaction Details</span>
+                    <span className="transaction-note-tag">RX</span>
+                  </div>
+                  <div className="transaction-preview-meta">
+                    <div><strong>Almeda Optical Shangri-La</strong></div>
+                    <div>Shangri-La Plaza, Mandaluyong City</div>
+                    <div>{transactionPreview.txnId} · {transactionPreview.date} · {transactionPreview.time}</div>
                   </div>
 
-                  <div className="receipt-line"><span>Ray-Ban RB5154 Frame × 1</span><span>₱3,500.00</span></div>
-                  <div className="receipt-line"><span>Progressive Lens Upgrade × 1</span><span>₱1,800.00</span></div>
-                  <div className="receipt-line"><span>Anti-reflective Coating × 1</span><span>₱450.00</span></div>
-                  <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Subtotal</span><span>₱5,750.00</span></div>
-                  <div className="receipt-total-line"><span>Total Due</span><span>₱5,750.00</span></div>
+                  <div className="transaction-preview-lines">
+                    <div className="transaction-preview-line"><span>NAME</span><span>{transactionPreview.name || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>AGE</span><span>{transactionPreview.age || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>ADD</span><span>{transactionPreview.address || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>NUMBER</span><span>{transactionPreview.contactNumber || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>ITEM</span><span>{transactionPreview.item || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>QTY</span><span>{transactionPreview.quantity || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>OD</span><span>{transactionPreview.prescriptionOd || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>OS</span><span>{transactionPreview.prescriptionOs || '—'}</span></div>
+                    <div className="transaction-preview-line"><span>PD</span><span>{transactionPreview.pd || '—'}</span></div>
+                  </div>
+
+                  <div className="receipt-line"><span>{transactionPreview.item} × {transactionPreview.quantity}</span><span>{formatCurrency(Number(transactionPreview.unitPrice.replace(/[^0-9.]/g, '')) * Number(transactionPreview.quantity || 0))}</span></div>
+                  <div className="receipt-line"><span>{transactionPreview.lensAddOn}</span><span>Included</span></div>
+                  <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment</span><span>{transactionPreview.payment || '—'}</span></div>
+                  <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Subtotal</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
+                  <div className="receipt-total-line"><span>Total Due</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
+                  <div className="rx-by-block">
+                    <span>RX BY</span>
+                    <div className="rx-by-line">{transactionPreview.rxBy || '—'}</div>
+                  </div>
                 </div>
               </div>
             </form>
@@ -961,17 +1095,42 @@ function App() {
                 placeholder="Search by customer, TXN ID, item..."
                 aria-label="Search transactions by customer, transaction ID, or item"
               />
-              <select className="form-select" style={{ width: 'auto' }}>
-                <option>All Payment Types</option>
-                <option>Cash</option>
-                <option>GCash</option>
-                <option>Credit Card</option>
+              <select
+                className="form-select"
+                style={{ width: 'auto' }}
+                value={transactionPaymentFilter}
+                onChange={(event) => setTransactionPaymentFilter(event.target.value)}
+                aria-label="Filter transactions by payment type"
+              >
+                <option value="all">All Payment Types</option>
+                <option value="cash">Cash</option>
+                <option value="gcash">GCash</option>
+                <option value="credit card">Credit Card</option>
+                <option value="debit card">Debit Card</option>
               </select>
-              <select className="form-select" style={{ width: 'auto' }}>
-                <option>All Status</option>
-                <option>Paid</option>
-                <option>Processing</option>
-                <option>Pending</option>
+              <select
+                className="form-select"
+                style={{ width: 'auto' }}
+                value={transactionStatusFilter}
+                onChange={(event) => setTransactionStatusFilter(event.target.value)}
+                aria-label="Filter transactions by status"
+              >
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="processing">Processing</option>
+                <option value="pending">Pending</option>
+              </select>
+              <select
+                className="form-select"
+                style={{ width: 'auto' }}
+                value={transactionDateFilter}
+                onChange={(event) => setTransactionDateFilter(event.target.value)}
+                aria-label="Filter transactions by date"
+              >
+                <option value="all">All Transactions</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
               </select>
               <button className="btn btn-secondary btn-sm">Export CSV</button>
               <button className="btn btn-primary btn-sm" onClick={() => setCurrentPage('pos')}>+ New Transaction</button>
@@ -991,13 +1150,13 @@ function App() {
                       <td>{record.amount}</td>
                       <td>{record.payment}</td>
                       <td><span className={`badge ${record.badge}`}>{record.status}</span></td>
-                      <td><button className="btn btn-secondary btn-sm">View</button></td>
+                      <td><button className="btn btn-secondary btn-sm" onClick={() => openTransactionDetails(record)}>View</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
-                <span>Showing {recordRows.length} of {recordRows.length} records</span>
+                <span>Showing {recordRows.length} of {transactions.length} records</span>
                 <div className="flex gap-2">
                   <button className="btn btn-secondary btn-sm">Previous</button>
                   <button className="btn btn-secondary btn-sm">Next</button>
@@ -1445,6 +1604,29 @@ function App() {
           </div>
         </div>
       </div>
+
+      {showTransactionModal && selectedTransaction && (
+        <div className="modal-overlay" onClick={() => setShowTransactionModal(false)}>
+          <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Transaction Details</h3>
+              <button className="modal-close" onClick={() => setShowTransactionModal(false)} aria-label="Close transaction details">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="customer-detail-grid">
+                <div className="profile-row"><span className="profile-label">TXN ID</span><span>{selectedTransaction.id || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Date</span><span>{selectedTransaction.date || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Customer</span><span>{selectedTransaction.customer || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Item(s)</span><span>{selectedTransaction.items || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Amount</span><span>{selectedTransaction.amount || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Payment</span><span>{selectedTransaction.payment || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Status</span><span className={`badge ${selectedTransaction.badge}`}>{selectedTransaction.status || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">RX BY</span><span>{selectedTransaction.rxBy || 'N/A'}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCustomerModal && selectedCustomer && (
         <div className="modal-overlay" onClick={() => setShowCustomerModal(false)}>

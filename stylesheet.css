@@ -506,6 +506,140 @@
   .receipt-line:last-child { border-bottom: none; }
   .receipt-total-line { display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; padding-top: 10px; border-top: 1px solid var(--border2); margin-top: 4px; }
 
+  .transaction-note-card {
+    background: linear-gradient(180deg, #fffdfb 0%, #fdfaf6 100%);
+    border: 1px solid rgba(25, 33, 30, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .transaction-note-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.02),
+      rgba(0, 0, 0, 0.02) 2px,
+      transparent 2px,
+      transparent 22px
+    );
+    pointer-events: none;
+  }
+
+  .transaction-note-header {
+    position: relative;
+    z-index: 1;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 700; color: var(--text);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .transaction-note-tag {
+    font-size: 10px;
+    color: var(--text2);
+    border: 1px solid rgba(0,0,0,0.18);
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.6);
+  }
+
+  .transaction-note-grid {
+    position: relative; z-index: 1;
+    display: grid; gap: 12px; margin-bottom: 12px;
+  }
+
+  .transaction-note-grid.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transaction-note-grid.three-col { grid-template-columns: 2fr 0.7fr 1fr; }
+
+  .transaction-note-field {
+    display: flex; flex-direction: column; gap: 5px;
+  }
+
+  .transaction-note-field label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--text2); text-transform: uppercase;
+  }
+
+  .transaction-note-input,
+  .transaction-note-select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.45);
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+  }
+
+  .transaction-note-input:focus,
+  .transaction-note-select:focus {
+    outline: none;
+    border-color: rgba(28, 78, 53, 0.7);
+    box-shadow: 0 0 0 2px rgba(28, 78, 53, 0.08);
+  }
+
+  .transaction-note-field.wide { grid-column: span 1; }
+  .transaction-note-field.small { min-width: 0; }
+
+  .transaction-note-footer {
+    position: relative; z-index: 1; margin-top: 10px; }
+
+  .transaction-preview-card {
+    min-height: 100%;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .transaction-preview-meta {
+    position: relative; z-index: 1;
+    font-size: 12px; color: var(--text2);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .transaction-preview-meta strong {
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Serif Display', serif;
+  }
+
+  .transaction-preview-lines {
+    position: relative; z-index: 1;
+    display: grid; gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .transaction-preview-line {
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 12px; color: var(--text);
+    padding-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.08);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .transaction-preview-line span:first-child {
+    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
+    min-width: 56px;
+  }
+
+  .rx-by-block {
+    position: relative; z-index: 1;
+    margin-top: 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2);
+  }
+
+  .rx-by-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(0,0,0,0.28);
+  }
+
   /* TIER CARDS */
   .tier-card {
     border: 1px solid var(--border);

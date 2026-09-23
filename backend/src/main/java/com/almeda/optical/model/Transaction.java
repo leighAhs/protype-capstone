@@ -29,6 +29,9 @@ public class Transaction {
   @Column(nullable = false)
   private String payment;
 
+  @Column(name = "rx_by")
+  private String rxBy;
+
   @Column(nullable = false)
   private String status;
 
@@ -108,6 +111,14 @@ public class Transaction {
 
   public void setPayment(String payment) {
     this.payment = payment;
+  }
+
+  public String getRxBy() {
+    return rxBy;
+  }
+
+  public void setRxBy(String rxBy) {
+    this.rxBy = rxBy;
   }
 
   public String getStatus() {

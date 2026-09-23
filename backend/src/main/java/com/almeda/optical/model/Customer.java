@@ -21,6 +21,12 @@ public class Customer {
   private String contactNumber;
 
   @Column
+  private Integer age;
+
+  @Column
+  private String address;
+
+  @Column
   private String email;
 
   @Column(name = "card_no", nullable = false, unique = true)
@@ -92,6 +98,22 @@ public class Customer {
 
   public void setContactNumber(String contactNumber) {
     this.contactNumber = contactNumber;
+  }
+
+  public Integer getAge() {
+    return age;
+  }
+
+  public void setAge(Integer age) {
+    this.age = age;
+  }
+
+  public String getAddress() {
+    return address;
+  }
+
+  public void setAddress(String address) {
+    this.address = address;
   }
 
   public String getEmail() {
