@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchInventory, createInventoryItem, createCustomer, createTransaction, updateTransactionItemStatus, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
 
 const pageLabels = {
@@ -135,6 +135,9 @@ function App() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [pendingStatusConfirmation, setPendingStatusConfirmation] = useState(null);
+  const [pendingTransactionFormData, setPendingTransactionFormData] = useState(null);
+  const [showTransactionConfirmation, setShowTransactionConfirmation] = useState(false);
+  const transactionFormRef = useRef(null);
   const [editingOwnProfile, setEditingOwnProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ username: '', password: '', displayName: '' });
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
@@ -456,7 +459,7 @@ function App() {
     setNewInventoryItem((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleTransactionSubmit = async (event) => {
+  const handleTransactionSubmit = (event) => {
     event.preventDefault();
     setTransactionMessage('');
     setTransactionError('');
@@ -464,15 +467,25 @@ function App() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const name = String(formData.get('customerName') || '').trim();
-    const age = String(formData.get('age') || '').trim();
-    const address = String(formData.get('address') || '').trim();
-    const quantity = Number(formData.get('quantity') || 0);
-    const unitPrice = Number(String(formData.get('unitPrice') || '').replace(/[^0-9.]/g, '')) || 0;
 
     if (!name) {
       setTransactionError('Please enter the customer name.');
       return;
     }
+
+    setPendingTransactionFormData(formData);
+    setShowTransactionConfirmation(true);
+  };
+
+  const saveConfirmedTransaction = async () => {
+    if (!pendingTransactionFormData) return;
+
+    const formData = pendingTransactionFormData;
+    const name = String(formData.get('customerName') || '').trim();
+    const age = String(formData.get('age') || '').trim();
+    const address = String(formData.get('address') || '').trim();
+    const quantity = Number(formData.get('quantity') || 0);
+    const unitPrice = Number(String(formData.get('unitPrice') || '').replace(/[^0-9.]/g, '')) || 0;
 
     try {
       const item = String(formData.get('item') || '').trim();
@@ -536,7 +549,9 @@ function App() {
         amount: transaction.amount ?? quantity * unitPrice
       });
       setTransactionMessage(`${customer.name}'s transaction was saved successfully.`);
-      form.reset();
+      transactionFormRef.current?.reset();
+      setPendingTransactionFormData(null);
+      setShowTransactionConfirmation(false);
     } catch (error) {
       setTransactionError(error.message);
     }
@@ -983,7 +998,7 @@ function App() {
               <div className="page-subtitle">Paperless point-of-sale</div>
             </div>
 
-            <form className="grid-2" onSubmit={handleTransactionSubmit}>
+            <form ref={transactionFormRef} className="grid-2" onSubmit={handleTransactionSubmit}>
               <div>
                 <div className="card mb-4 transaction-note-card">
                   <div className="transaction-note-header">
@@ -1804,6 +1819,24 @@ function App() {
           </div>
         </div>
       </div>
+
+      {showTransactionConfirmation && (
+        <div className="modal-overlay" onClick={() => { setShowTransactionConfirmation(false); setPendingTransactionFormData(null); }}>
+          <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Transaction</h3>
+              <button className="modal-close" onClick={() => { setShowTransactionConfirmation(false); setPendingTransactionFormData(null); }} aria-label="Close transaction confirmation">×</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure all transaction information is filled in correctly?</p>
+              <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+                <button className="btn btn-secondary" onClick={() => { setShowTransactionConfirmation(false); setPendingTransactionFormData(null); }}>Back</button>
+                <button className="btn btn-primary" onClick={saveConfirmedTransaction}>Yes, Process Transaction</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {pendingStatusConfirmation && (
         <div className="modal-overlay" onClick={() => setPendingStatusConfirmation(null)}>
