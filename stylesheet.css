@@ -403,6 +403,9 @@
   .data-table tr:last-child td { border-bottom: none; }
   .data-table tr:hover td { background: var(--bg); }
   .data-table .name { font-weight: 500; }
+  .data-table th:last-child,
+  .data-table td:last-child { width: 1%; white-space: nowrap; }
+  .accessory-only-card { display: none; }
 
   /* BADGES */
   .badge {
@@ -465,6 +468,50 @@
 
   .form-textarea { resize: vertical; min-height: 80px; }
   .form-hint { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  .payment-status-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 142px;
+    white-space: nowrap;
+  }
+
+  .payment-update-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    background: var(--orange-light);
+    border: 1px solid rgba(196, 117, 20, 0.2);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  .payment-update-summary strong {
+    color: var(--orange);
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .payment-update-description {
+    margin: 0;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .payment-update-field {
+    margin-top: 18px;
+  }
+
+  #remaining-balance-input::-webkit-outer-spin-button,
+  #remaining-balance-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 
   /* SECTION DIVIDER */
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }

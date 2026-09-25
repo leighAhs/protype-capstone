@@ -139,6 +139,17 @@ export async function updateTransactionItemStatus(txnId, itemStatus) {
   return await checkResponse(response);
 }
 
+export async function updateTransactionPaymentStatus(txnId, paymentAmount) {
+  const response = await fetch(`${API_BASE}/transactions/${encodeURIComponent(txnId)}/payment-status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ paymentAmount })
+  });
+  return await checkResponse(response);
+}
+
 export async function createCustomer(customer) {
   const response = await fetch(`${API_BASE}/customers`, {
     method: 'POST',

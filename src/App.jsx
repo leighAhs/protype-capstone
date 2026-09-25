@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchInventory, createInventoryItem, createCustomer, createTransaction, updateTransactionItemStatus, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
+import { fetchInventory, createInventoryItem, createCustomer, createTransaction, updateTransactionItemStatus, updateTransactionPaymentStatus, loginUser, fetchUsers, createUser, updateUser, deleteUser, fetchUserActivity, fetchProjectData, fetchTransactions } from './api';
 
 const pageLabels = {
   dashboard: ['Dashboard', 'Overview'],
@@ -26,6 +26,7 @@ const navItems = [
   {
     section: 'Operations',
     items: [
+      { id: 'inventory', label: 'Inventory' },
       { id: 'forecast', label: 'Sales Forecast' }
     ]
   },
@@ -100,6 +101,8 @@ function App() {
   const [transactionPaymentFilter, setTransactionPaymentFilter] = useState('all');
   const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
   const [transactionDateFilter, setTransactionDateFilter] = useState('all');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState('all');
+  const [selectedItemType, setSelectedItemType] = useState('');
   const [transactionPage, setTransactionPage] = useState(0);
   const [topDemandData, setTopDemandData] = useState([]);
   const [forecastMonthlyData, setForecastMonthlyData] = useState([]);
@@ -117,7 +120,7 @@ function App() {
   const [transactionMessage, setTransactionMessage] = useState('');
   const [transactionError, setTransactionError] = useState('');
   const [transactionPreview, setTransactionPreview] = useState({
-    name: '', age: '', address: '', contactNumber: '', item: '', quantity: '', unitPrice: '',
+    name: '', itemType: '', age: '', address: '', contactNumber: '', item: '', quantity: '', unitPrice: '',
     prescriptionOd: '', prescriptionOs: '', pd: '', lensAddOn: '', payment: '', paymentStatus: '',
     rxBy: '',
     txnId: '', date: '', time: '', amount: 0
@@ -137,6 +140,8 @@ function App() {
   const [pendingStatusConfirmation, setPendingStatusConfirmation] = useState(null);
   const [pendingTransactionFormData, setPendingTransactionFormData] = useState(null);
   const [showTransactionConfirmation, setShowTransactionConfirmation] = useState(false);
+  const [paymentUpdateTransaction, setPaymentUpdateTransaction] = useState(null);
+  const [remainingBalanceInput, setRemainingBalanceInput] = useState('');
   const transactionFormRef = useRef(null);
   const [editingOwnProfile, setEditingOwnProfile] = useState(false);
   const [profileFormData, setProfileFormData] = useState({ username: '', password: '', displayName: '' });
@@ -158,7 +163,7 @@ function App() {
 
   useEffect(() => {
     setTransactionPage(0);
-  }, [transactionSearch, transactionPaymentFilter, transactionStatusFilter, transactionDateFilter]);
+  }, [transactionSearch, transactionPaymentFilter, transactionStatusFilter, transactionDateFilter, transactionTypeFilter]);
 
   const [editingUser, setEditingUser] = useState(null);
   const [userMessage, setUserMessage] = useState('');
@@ -216,6 +221,10 @@ function App() {
   weekStart.setDate(weekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   const weekStartKey = weekStart.toISOString().slice(0, 10);
   const monthStartKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+  const matchesTransactionType = (itemType) => (
+    transactionTypeFilter === 'all'
+    || String(itemType || '').trim().toLowerCase() === transactionTypeFilter.toLowerCase()
+  );
 
   const recordRows = transactions
     .map((tx) => ({
@@ -223,9 +232,11 @@ function App() {
       date: tx.txDate || tx.date || tx.tx_date || '—',
       customer: tx.customerName || tx.customer_name || tx.customer || '—',
       items: tx.item_summary || tx.items || tx.item || '—',
+      itemType: tx.itemType || tx.item_type || '—',
       amount: formatCurrency(tx.amount),
       payment: tx.payment_method || tx.payment || '—',
       rxBy: tx.rxBy || tx.rx_by || 'N/A',
+      remainingBalance: Number(tx.remainingBalance ?? tx.remaining_balance ?? 0),
       paymentStatus: tx.status || 'Pending',
       itemStatus: tx.itemStatus || tx.item_status || 'Completed',
       paymentBadge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Half Paid' ? 'badge-warning' : tx.status === 'Processing' ? 'badge-info' : 'badge-warning',
@@ -252,6 +263,9 @@ function App() {
     .filter((record) => {
       if (transactionStatusFilter === 'all') return true;
       return record.paymentStatus.toLowerCase() === transactionStatusFilter.toLowerCase();
+    })
+    .filter((record) => {
+      return matchesTransactionType(record.itemType);
     });
 
   const pendingItemRows = transactions
@@ -259,20 +273,32 @@ function App() {
       id: tx.txnId || tx.tx_id || tx.id,
       customer: tx.customerName || tx.customer_name || tx.customer || '—',
       item: tx.item_summary || tx.items || tx.item || '—',
+      itemType: tx.itemType || tx.item_type || '—',
       date: tx.txDate || tx.date || tx.tx_date || '—',
-      itemStatus: tx.itemStatus || tx.item_status || (tx.status === 'Processing' ? 'Processing' : 'Completed')
+      amount: Number(tx.amount || 0),
+      remainingBalance: Number(tx.remainingBalance ?? tx.remaining_balance ?? 0),
+      itemStatus: tx.itemStatus || tx.item_status || (tx.status === 'Processing' ? 'Processing' : 'Completed'),
+      paymentStatus: tx.status || 'Pending',
+      paymentBadge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Half Paid' ? 'badge-warning' : 'badge-info'
     }))
-    .filter((record) => record.itemStatus.toLowerCase() === 'processing');
+    .filter((record) => matchesTransactionType(record.itemType))
+    .filter((record) => record.itemStatus.trim().toLowerCase() === 'processing');
 
   const readyItemRows = transactions
     .map((tx) => ({
       id: tx.txnId || tx.tx_id || tx.id,
       customer: tx.customerName || tx.customer_name || tx.customer || '—',
       item: tx.item_summary || tx.items || tx.item || '—',
+      itemType: tx.itemType || tx.item_type || '—',
       date: tx.txDate || tx.date || tx.tx_date || '—',
-      itemStatus: tx.itemStatus || tx.item_status || 'Completed'
+      amount: Number(tx.amount || 0),
+      remainingBalance: Number(tx.remainingBalance ?? tx.remaining_balance ?? 0),
+      itemStatus: tx.itemStatus || tx.item_status || 'Completed',
+      paymentStatus: tx.status || 'Pending',
+      paymentBadge: tx.status === 'Paid' ? 'badge-success' : tx.status === 'Half Paid' ? 'badge-warning' : 'badge-info'
     }))
-    .filter((record) => record.itemStatus.toLowerCase() === 'ready');
+    .filter((record) => matchesTransactionType(record.itemType))
+    .filter((record) => record.itemStatus.trim().toLowerCase() === 'ready');
 
   const transactionsPerPage = 10;
   const transactionPageCount = Math.max(1, Math.ceil(recordRows.length / transactionsPerPage));
@@ -315,13 +341,55 @@ function App() {
     if (!pendingStatusConfirmation) return;
     const { txnId, itemStatus } = pendingStatusConfirmation;
     setPendingStatusConfirmation(null);
+    if (itemStatus === 'Completed') {
+      const transaction = transactions.find((tx) => (tx.txnId || tx.tx_id || tx.id) === txnId);
+      const paymentStatus = transaction?.status || transaction?.paymentStatus;
+      if (paymentStatus?.toLowerCase() === 'half paid') {
+        openPaymentUpdate({
+          id: txnId,
+          amount: Number(transaction.amount || 0),
+          remainingBalance: Number(transaction.remainingBalance ?? transaction.remaining_balance ?? 0)
+        });
+        return;
+      }
+    }
     setTransactionError('');
     try {
-      const updatedTransaction = await updateTransactionItemStatus(txnId, itemStatus);
-      setTransactions((previousTransactions) => previousTransactions.map((transaction) => {
-        const currentId = transaction.txnId || transaction.tx_id || transaction.id;
-        return currentId === txnId ? { ...transaction, ...updatedTransaction, itemStatus } : transaction;
-      }));
+      await updateTransactionItemStatus(txnId, itemStatus);
+      const refreshedTransactions = await fetchTransactions();
+      setTransactions(Array.isArray(refreshedTransactions) ? refreshedTransactions : []);
+    } catch (error) {
+      setTransactionError(error.message);
+    }
+  };
+
+  const openPaymentUpdate = (record) => {
+    setPaymentUpdateTransaction(record);
+    const amount = Number(record.amount) || Number(String(record.amount).replace(/[^0-9.]/g, '')) || 0;
+    const balance = Number(record.remainingBalance) || amount / 2;
+    setRemainingBalanceInput(String(balance));
+  };
+
+  const confirmPaymentUpdate = async () => {
+    if (!paymentUpdateTransaction) return;
+    const paymentAmount = Number(remainingBalanceInput);
+    const outstandingBalance = Number(paymentUpdateTransaction.remainingBalance)
+      || (Number(paymentUpdateTransaction.amount) || 0) / 2;
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      setTransactionError('Enter a valid payment amount greater than zero.');
+      return;
+    }
+    if (paymentAmount > outstandingBalance) {
+      setTransactionError(`Payment cannot exceed the remaining balance of ${formatCurrency(outstandingBalance)}.`);
+      return;
+    }
+    setTransactionError('');
+    try {
+      await updateTransactionPaymentStatus(paymentUpdateTransaction.id, paymentAmount);
+      const refreshedTransactions = await fetchTransactions();
+      setTransactions(Array.isArray(refreshedTransactions) ? refreshedTransactions : []);
+      setPaymentUpdateTransaction(null);
+      setRemainingBalanceInput('');
     } catch (error) {
       setTransactionError(error.message);
     }
@@ -429,14 +497,24 @@ function App() {
   useEffect(() => {
     fetchTransactions()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setTransactions(data);
-        }
+        setTransactions(Array.isArray(data) ? data : []);
       })
       .catch(() => {
         // ignore fallback errors
       });
   }, []);
+
+  useEffect(() => {
+    if (currentPage !== 'records') return undefined;
+
+    fetchTransactions()
+      .then((data) => {
+        setTransactions(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        // Keep the current list when the refresh cannot reach the backend.
+      });
+  }, [currentPage]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -467,8 +545,13 @@ function App() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const name = String(formData.get('customerName') || '').trim();
+    const itemType = String(formData.get('itemType') || '').trim();
 
-    if (!name) {
+    if (!itemType) {
+      setTransactionError('Please select what type of item is being processed.');
+      return;
+    }
+    if (itemType !== 'ACCESSORIES' && !name) {
       setTransactionError('Please enter the customer name.');
       return;
     }
@@ -477,11 +560,38 @@ function App() {
     setShowTransactionConfirmation(true);
   };
 
+  const handleTransactionPreviewChange = (event) => {
+    const form = event.currentTarget;
+    const value = (name) => form.elements[name]?.value || '';
+    const quantity = Number(value('quantity')) || 0;
+    const unitPrice = Number(String(value('unitPrice')).replace(/[^0-9.]/g, '')) || 0;
+    setTransactionPreview((previous) => ({
+      ...previous,
+      name: value('customerName'),
+      itemType: value('itemType'),
+      age: value('age'),
+      address: value('address'),
+      contactNumber: value('contactNumber'),
+      item: value('item'),
+      quantity: value('quantity'),
+      unitPrice: value('unitPrice'),
+      prescriptionOd: value('prescriptionOd'),
+      prescriptionOs: value('prescriptionOs'),
+      pd: value('pd'),
+      lensAddOn: value('lensAddOn'),
+      payment: value('paymentMethod'),
+      paymentStatus: value('paymentStatus'),
+      rxBy: value('rxBy'),
+      amount: quantity * unitPrice
+    }));
+  };
+
   const saveConfirmedTransaction = async () => {
     if (!pendingTransactionFormData) return;
 
     const formData = pendingTransactionFormData;
     const name = String(formData.get('customerName') || '').trim();
+    const itemType = String(formData.get('itemType') || '').trim();
     const age = String(formData.get('age') || '').trim();
     const address = String(formData.get('address') || '').trim();
     const quantity = Number(formData.get('quantity') || 0);
@@ -497,7 +607,7 @@ function App() {
       const paymentStatus = String(formData.get('paymentStatus') || 'Paid').trim();
       const rxBy = String(formData.get('rxBy') || '').trim();
       const itemStatus = String(formData.get('itemStatus') || 'Processing').trim();
-      const customer = await createCustomer({
+      const customer = itemType === 'ACCESSORIES' ? null : await createCustomer({
         name,
         age: age || null,
         address: address || null,
@@ -510,6 +620,9 @@ function App() {
       const transaction = await createTransaction({
         customerName: name,
         item,
+        itemType,
+        prescriptionOd: prescriptionOd || null,
+        prescriptionOs: prescriptionOs || null,
         amount: quantity * unitPrice,
         payment,
         paymentStatus,
@@ -524,12 +637,15 @@ function App() {
           ? refreshedTransactions
           : [transaction, ...refreshedTransactions])
         : [transaction, ...transactions];
-      setCustomerList((previousCustomers) => [customer, ...previousCustomers]);
+      if (customer) {
+        setCustomerList((previousCustomers) => [customer, ...previousCustomers]);
+      }
       setTransactions(savedTransactions);
       const savedDate = transaction.txDate || transaction.tx_date || new Date().toISOString().slice(0, 10);
       const savedTime = transaction.txTime || transaction.tx_time || new Date().toTimeString().slice(0, 5);
       setTransactionPreview({
         name,
+        itemType,
         age,
         address,
         contactNumber: String(formData.get('contactNumber') || '').trim(),
@@ -998,17 +1114,54 @@ function App() {
               <div className="page-subtitle">Paperless point-of-sale</div>
             </div>
 
-            <form ref={transactionFormRef} className="grid-2" onSubmit={handleTransactionSubmit}>
+            <form
+              ref={transactionFormRef}
+              className="grid-2"
+              onSubmit={handleTransactionSubmit}
+              onChange={handleTransactionPreviewChange}
+              onReset={() => {
+                setSelectedItemType('');
+                setTransactionPreview({
+                  name: '', itemType: '', age: '', address: '', contactNumber: '', item: '', quantity: '', unitPrice: '',
+                  prescriptionOd: '', prescriptionOs: '', pd: '', lensAddOn: '', payment: '', paymentStatus: '',
+                  rxBy: '', txnId: '', date: '', time: '', amount: 0
+                });
+              }}
+            >
               <div>
-                <div className="card mb-4 transaction-note-card">
+                <div className="card mb-4 transaction-note-card transaction-type-selector">
+                  <div className="transaction-note-header">
+                    <span>What are you processing?</span>
+                    <span className="transaction-note-tag">Required first</span>
+                  </div>
+                  <div className="transaction-note-field">
+                    <label htmlFor="transaction-item-type">Item Type</label>
+                    <select
+                      id="transaction-item-type"
+                      className="transaction-note-select"
+                      name="itemType"
+                      value={selectedItemType}
+                      onChange={(event) => setSelectedItemType(event.target.value)}
+                      required
+                    >
+                      <option value="">Select item type before continuing</option>
+                      <option value="PRESCRIPTION">Prescription</option>
+                      <option value="SUNGLASSES">Sunglasses</option>
+                      <option value="ONLY FRAME">Only Frame</option>
+                      <option value="ACCESSORIES">Accessories</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={`card mb-4 transaction-note-card${selectedItemType === 'ACCESSORIES' ? ' accessory-only-card' : ''}`}>
                   <div className="transaction-note-header">
                     <span>Customer Information</span>
-                    <span className="transaction-note-tag">Info</span>
+                    <span className="transaction-note-tag">{selectedItemType === 'ACCESSORIES' ? 'Optional for accessories' : 'Required'}</span>
                   </div>
                   <div className="transaction-note-grid two-col">
                     <div className="transaction-note-field">
                       <label>Name</label>
-                      <input className="transaction-note-input" name="customerName" type="text" placeholder="Full name" required />
+                      <input className="transaction-note-input" name="customerName" type="text" placeholder={selectedItemType === 'ACCESSORIES' ? 'Optional for accessories' : 'Full name'} required={selectedItemType !== 'ACCESSORIES'} />
                     </div>
                     <div className="transaction-note-field">
                       <label>Age</label>
@@ -1041,7 +1194,7 @@ function App() {
                   <div className="transaction-note-grid three-col">
                     <div className="transaction-note-field wide">
                       <label>Item</label>
-                      <select className="transaction-note-select" name="item">
+                      <select className="transaction-note-select" name="item" required>
                         <option value="">Select a product or service</option>
                         {inventoryProducts.map((product) => (
                           <option key={product.sku} value={product.name}>{product.name}</option>
@@ -1050,40 +1203,44 @@ function App() {
                     </div>
                     <div className="transaction-note-field small">
                       <label>Qty</label>
-                      <input className="transaction-note-input" name="quantity" type="number" min="1" placeholder="Quantity" />
+                      <input className="transaction-note-input" name="quantity" type="number" min="1" placeholder="Quantity" required />
                     </div>
                     <div className="transaction-note-field small">
                       <label>Price</label>
-                      <input className="transaction-note-input" name="unitPrice" type="text" placeholder="Unit price" />
+                      <input className="transaction-note-input" name="unitPrice" type="text" placeholder="Unit price" required />
                     </div>
                   </div>
 
-                  <div className="transaction-note-grid two-col">
-                    <div className="transaction-note-field">
-                      <label>OD</label>
-                      <input className="transaction-note-input" name="prescriptionOd" placeholder="-1.50 / -0.25 × 180" />
-                    </div>
-                    <div className="transaction-note-field">
-                      <label>OS</label>
-                      <input className="transaction-note-input" name="prescriptionOs" placeholder="-1.25 / -0.50 × 175" />
-                    </div>
-                  </div>
+                  {!['SUNGLASSES', 'ONLY FRAME'].includes(selectedItemType) ? (
+                    <>
+                      <div className="transaction-note-grid two-col">
+                        <div className="transaction-note-field">
+                          <label>OD</label>
+                          <input className="transaction-note-input" name="prescriptionOd" placeholder="-1.50 / -0.25 × 180" required={selectedItemType === 'PRESCRIPTION'} />
+                        </div>
+                        <div className="transaction-note-field">
+                          <label>OS</label>
+                          <input className="transaction-note-input" name="prescriptionOs" placeholder="-1.25 / -0.50 × 175" required={selectedItemType === 'PRESCRIPTION'} />
+                        </div>
+                      </div>
 
-                  <div className="transaction-note-grid two-col">
-                    <div className="transaction-note-field">
-                      <label>PD</label>
-                      <input className="transaction-note-input" name="pd" placeholder="63mm" />
-                    </div>
-                    <div className="transaction-note-field">
-                      <label>Lens Add-on</label>
-                      <select className="transaction-note-select" name="lensAddOn">
-                        <option value="None">None</option>
-                        {inventoryProducts.filter((product) => ['Lenses', 'Accessories'].includes(product.category)).map((product) => (
-                          <option key={`addon-${product.sku}`} value={product.name}>{product.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                      <div className="transaction-note-grid two-col">
+                        <div className="transaction-note-field">
+                          <label>PD</label>
+                          <input className="transaction-note-input" name="pd" placeholder="63mm" />
+                        </div>
+                        <div className="transaction-note-field">
+                          <label>Lens Add-on</label>
+                          <select className="transaction-note-select" name="lensAddOn">
+                            <option value="None">None</option>
+                            {inventoryProducts.filter((product) => ['Lenses', 'Accessories'].includes(product.category)).map((product) => (
+                              <option key={`addon-${product.sku}`} value={product.name}>{product.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
 
                   <div className="transaction-note-grid">
                     <div className="transaction-note-field">
@@ -1118,12 +1275,14 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="transaction-note-grid">
-                    <div className="transaction-note-field">
-                      <label>RX BY</label>
-                      <input className="transaction-note-input" name="rxBy" type="text" placeholder="Doctor / Optometrist" />
+                  {!['ACCESSORIES', 'SUNGLASSES'].includes(selectedItemType) ? (
+                    <div className="transaction-note-grid">
+                      <div className="transaction-note-field">
+                        <label>RX BY</label>
+                        <input className="transaction-note-input" name="rxBy" type="text" placeholder="Doctor / Optometrist" required={selectedItemType === 'PRESCRIPTION'} />
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
                   <div className="transaction-note-footer">
                     <div className="flex gap-2 mt-4">
@@ -1154,32 +1313,45 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="transaction-preview-section-label">Customer & Prescription</div>
+                  <div className="transaction-preview-section-label">
+                    {transactionPreview.itemType === 'ACCESSORIES' ? 'Accessory Order' : transactionPreview.itemType === 'PRESCRIPTION' ? 'Customer & Prescription' : 'Customer & Order'}
+                  </div>
                   <div className="transaction-preview-lines transaction-preview-customer">
-                    <div className="transaction-preview-line"><span>NAME</span><span>{transactionPreview.name || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>AGE</span><span>{transactionPreview.age || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>ADD</span><span>{transactionPreview.address || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>NUMBER</span><span>{transactionPreview.contactNumber || '—'}</span></div>
+                    {transactionPreview.itemType !== 'ACCESSORIES' ? (
+                      <>
+                        <div className="transaction-preview-line"><span>NAME</span><span>{transactionPreview.name || '—'}</span></div>
+                        <div className="transaction-preview-line"><span>AGE</span><span>{transactionPreview.age || '—'}</span></div>
+                        <div className="transaction-preview-line"><span>ADD</span><span>{transactionPreview.address || '—'}</span></div>
+                        <div className="transaction-preview-line"><span>NUMBER</span><span>{transactionPreview.contactNumber || '—'}</span></div>
+                      </>
+                    ) : null}
+                    <div className="transaction-preview-line"><span>TYPE</span><span>{transactionPreview.itemType || '—'}</span></div>
                     <div className="transaction-preview-line"><span>ITEM</span><span>{transactionPreview.item || '—'}</span></div>
                     <div className="transaction-preview-line"><span>QTY</span><span>{transactionPreview.quantity || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>OD</span><span>{transactionPreview.prescriptionOd || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>OS</span><span>{transactionPreview.prescriptionOs || '—'}</span></div>
-                    <div className="transaction-preview-line"><span>PD</span><span>{transactionPreview.pd || '—'}</span></div>
+                    {transactionPreview.itemType === 'PRESCRIPTION' ? (
+                      <>
+                        <div className="transaction-preview-line"><span>OD</span><span>{transactionPreview.prescriptionOd || '—'}</span></div>
+                        <div className="transaction-preview-line"><span>OS</span><span>{transactionPreview.prescriptionOs || '—'}</span></div>
+                        <div className="transaction-preview-line"><span>PD</span><span>{transactionPreview.pd || '—'}</span></div>
+                      </>
+                    ) : null}
                   </div>
 
                   <div className="transaction-preview-section-label">Order Summary</div>
                   <div className="transaction-preview-charges">
                     <div className="receipt-line"><span>{transactionPreview.item || 'No product selected'} × {transactionPreview.quantity || '0'}</span><span>{formatCurrency(Number(transactionPreview.unitPrice.replace(/[^0-9.]/g, '')) * Number(transactionPreview.quantity || 0))}</span></div>
-                    {transactionPreview.lensAddOn && transactionPreview.lensAddOn !== 'None' ? <div className="receipt-line"><span>{transactionPreview.lensAddOn}</span><span>Included</span></div> : null}
+                    {transactionPreview.itemType === 'PRESCRIPTION' && transactionPreview.lensAddOn && transactionPreview.lensAddOn !== 'None' ? <div className="receipt-line"><span>{transactionPreview.lensAddOn}</span><span>Included</span></div> : null}
                     <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment</span><span>{transactionPreview.payment || '—'}</span></div>
                     <div className="receipt-line"><span style={{ color: 'var(--text3)' }}>Payment Status</span><span>{transactionPreview.paymentStatus || '—'}</span></div>
                     <div className="receipt-total-line"><span>Total Due</span><span>{formatCurrency(transactionPreview.amount)}</span></div>
                   </div>
                   <div className="transaction-preview-footer">
-                    <div className="rx-by-block">
-                      <span>RX BY</span>
-                      <strong>{transactionPreview.rxBy || 'Not assigned'}</strong>
-                    </div>
+                    {!['ACCESSORIES', 'SUNGLASSES'].includes(transactionPreview.itemType) ? (
+                      <div className="rx-by-block">
+                        <span>RX BY</span>
+                        <strong>{transactionPreview.rxBy || 'Not assigned'}</strong>
+                      </div>
+                    ) : null}
                     <div className="transaction-preview-item-status">
                       <span>ITEM STATUS</span>
                       <strong>{transactionPreview.itemStatus || 'Not processed'}</strong>
@@ -1233,6 +1405,19 @@ function App() {
               <select
                 className="form-select"
                 style={{ width: 'auto' }}
+                value={transactionTypeFilter}
+                onChange={(event) => setTransactionTypeFilter(event.target.value)}
+                aria-label="Filter transactions by item type"
+              >
+                <option value="all">All Item Types</option>
+                <option value="prescription">Prescription</option>
+                <option value="sunglasses">Sunglasses</option>
+                <option value="only frame">Only Frame</option>
+                <option value="accessories">Accessories</option>
+              </select>
+              <select
+                className="form-select"
+                style={{ width: 'auto' }}
                 value={transactionDateFilter}
                 onChange={(event) => setTransactionDateFilter(event.target.value)}
                 aria-label="Filter transactions by date"
@@ -1253,7 +1438,7 @@ function App() {
               {pendingItemRows.length > 0 ? (
                 <table className="data-table">
                   <thead>
-                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th></tr>
+                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th><th>Payment Status</th><th /></tr>
                   </thead>
                   <tbody>
                     {pendingItemRows.map((record) => (
@@ -1274,6 +1459,15 @@ function App() {
                             <option value="Completed">Completed</option>
                           </select>
                         </td>
+                        <td>
+                          <div className="payment-status-cell">
+                            <span className={`badge ${record.paymentBadge}`}>{record.paymentStatus}</span>
+                            {record.paymentStatus === 'Half Paid' ? (
+                              <button className="btn btn-secondary btn-sm" onClick={() => openPaymentUpdate(record)}>Update</button>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td />
                       </tr>
                     ))}
                   </tbody>
@@ -1290,7 +1484,7 @@ function App() {
               {readyItemRows.length > 0 ? (
                 <table className="data-table">
                   <thead>
-                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th></tr>
+                    <tr><th>TXN ID</th><th>Customer</th><th>Item(s)</th><th>Date</th><th>Item Status</th><th>Payment Status</th><th /></tr>
                   </thead>
                   <tbody>
                     {readyItemRows.map((record) => (
@@ -1311,6 +1505,15 @@ function App() {
                             <option value="Completed">Completed</option>
                           </select>
                         </td>
+                        <td>
+                          <div className="payment-status-cell">
+                            <span className={`badge ${record.paymentBadge}`}>{record.paymentStatus}</span>
+                            {record.paymentStatus === 'Half Paid' ? (
+                              <button className="btn btn-secondary btn-sm" onClick={() => openPaymentUpdate(record)}>Update</button>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td />
                       </tr>
                     ))}
                   </tbody>
@@ -1322,13 +1525,14 @@ function App() {
             <div className="card">
               <table className="data-table">
                 <thead>
-                  <tr><th>TXN ID</th><th>Date</th><th>Customer</th><th>Item(s)</th><th>Amount</th><th>Payment</th><th>Item Status</th><th>Payment Status</th><th /></tr>
+                  <tr><th>TXN ID</th><th>Date</th><th>Type</th><th>Customer</th><th>Item(s)</th><th>Amount</th><th>Payment</th><th>Item Status</th><th>Payment Status</th><th /></tr>
                 </thead>
                 <tbody>
                   {visibleRecordRows.map((record) => (
                     <tr key={`${record.id}-${record.date}`}>
                       <td className="text-xs">{record.id}</td>
                       <td className="text-xs">{record.date}</td>
+                      <td><span className="badge badge-neutral">{record.itemType}</span></td>
                       <td className="name">{record.customer}</td>
                       <td>{record.items}</td>
                       <td>{record.amount}</td>
@@ -1349,7 +1553,14 @@ function App() {
                           </select>
                         )}
                       </td>
-                      <td><span className={`badge ${record.paymentBadge}`}>{record.paymentStatus}</span></td>
+                      <td>
+                        <div className="payment-status-cell">
+                          <span className={`badge ${record.paymentBadge}`}>{record.paymentStatus}</span>
+                          {record.paymentStatus === 'Half Paid' ? (
+                            <button className="btn btn-secondary btn-sm" onClick={() => openPaymentUpdate(record)}>Update</button>
+                          ) : null}
+                        </div>
+                      </td>
                       <td><button className="btn btn-secondary btn-sm" onClick={() => openTransactionDetails(record)}>View</button></td>
                     </tr>
                   ))}
@@ -1838,6 +2049,43 @@ function App() {
         </div>
       )}
 
+      {paymentUpdateTransaction && (
+        <div className="modal-overlay" onClick={() => setPaymentUpdateTransaction(null)}>
+          <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Update Payment</h3>
+              <button className="modal-close" onClick={() => setPaymentUpdateTransaction(null)} aria-label="Close payment update">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="payment-update-summary">
+                <span>Remaining balance to be paid</span>
+                <strong>₱{Number(paymentUpdateTransaction.remainingBalance || Number(paymentUpdateTransaction.amount || 0) / 2).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</strong>
+              </div>
+              <p className="payment-update-description">
+                Enter the payment amount for <strong>{paymentUpdateTransaction.id}</strong>. You can make additional payments until the remaining balance is fully paid.
+              </p>
+              <div className="form-group payment-update-field">
+                <label className="form-label" htmlFor="remaining-balance-input">Amount to pay</label>
+                <input
+                  className="form-input"
+                  id="remaining-balance-input"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
+                  value={remainingBalanceInput}
+                  onChange={(event) => setRemainingBalanceInput(event.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+                <button className="btn btn-secondary" onClick={() => setPaymentUpdateTransaction(null)}>Back</button>
+                <button className="btn btn-primary" onClick={confirmPaymentUpdate}>Update Payment</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {pendingStatusConfirmation && (
         <div className="modal-overlay" onClick={() => setPendingStatusConfirmation(null)}>
           <div className="modal-content customer-modal" onClick={(event) => event.stopPropagation()}>
@@ -1867,13 +2115,18 @@ function App() {
               <div className="customer-detail-grid">
                 <div className="profile-row"><span className="profile-label">TXN ID</span><span>{selectedTransaction.id || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Date</span><span>{selectedTransaction.date || 'N/A'}</span></div>
-                <div className="profile-row"><span className="profile-label">Customer</span><span>{selectedTransaction.customer || 'N/A'}</span></div>
+                <div className="profile-row"><span className="profile-label">Item Type</span><span>{selectedTransaction.itemType || 'N/A'}</span></div>
+                {String(selectedTransaction.itemType || '').toUpperCase() !== 'ACCESSORIES' ? (
+                  <div className="profile-row"><span className="profile-label">Customer</span><span>{selectedTransaction.customer || 'N/A'}</span></div>
+                ) : null}
                 <div className="profile-row"><span className="profile-label">Item(s)</span><span>{selectedTransaction.items || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Amount</span><span>{selectedTransaction.amount || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Payment</span><span>{selectedTransaction.payment || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Item Status</span><span className={`badge ${selectedTransaction.itemBadge}`}>{selectedTransaction.itemStatus || 'N/A'}</span></div>
                 <div className="profile-row"><span className="profile-label">Payment Status</span><span className={`badge ${selectedTransaction.paymentBadge}`}>{selectedTransaction.paymentStatus || 'N/A'}</span></div>
-                <div className="profile-row"><span className="profile-label">RX BY</span><span>{selectedTransaction.rxBy || 'N/A'}</span></div>
+                {!['ACCESSORIES', 'SUNGLASSES'].includes(String(selectedTransaction.itemType || '').toUpperCase()) ? (
+                  <div className="profile-row"><span className="profile-label">RX BY</span><span>{selectedTransaction.rxBy || 'N/A'}</span></div>
+                ) : null}
               </div>
             </div>
           </div>

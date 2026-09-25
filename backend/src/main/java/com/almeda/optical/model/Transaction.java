@@ -23,6 +23,9 @@ public class Transaction {
   @Column(nullable = false)
   private String items;
 
+  @Column(name = "item_type")
+  private String itemType;
+
   @Column(nullable = false)
   private Double amount;
 
@@ -34,6 +37,9 @@ public class Transaction {
 
   @Column(name = "item_status")
   private String itemStatus;
+
+  @Column(name = "remaining_balance")
+  private Double remainingBalance;
 
   @Column(nullable = false)
   private String status;
@@ -100,6 +106,14 @@ public class Transaction {
     this.items = items;
   }
 
+  public String getItemType() {
+    return itemType;
+  }
+
+  public void setItemType(String itemType) {
+    this.itemType = itemType;
+  }
+
   public Double getAmount() {
     return amount;
   }
@@ -130,6 +144,14 @@ public class Transaction {
 
   public void setItemStatus(String itemStatus) {
     this.itemStatus = itemStatus;
+  }
+
+  public Double getRemainingBalance() {
+    return remainingBalance;
+  }
+
+  public void setRemainingBalance(Double remainingBalance) {
+    this.remainingBalance = remainingBalance;
   }
 
   public String getStatus() {
